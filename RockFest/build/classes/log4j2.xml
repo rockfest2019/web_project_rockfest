@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+	<Properties>
+		<Property name = "basePath">${catalina.home}/logs/RockFestLog</Property>
+	</Properties>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="%d{HH:mm:ss.SSS}  %-5level %logger{36} - %msg%n"/>
+		</Console>
+		<RollingFile name="File" filename="${basePath}/log.txt"
+		filePattern="${basePath}/log-%d{yyyy-MM-dd}-%i.txt">
+			<PatternLayout pattern="%d{HH:mm:ss.SSS}  [%t] %-5level %logger{36} - %msg%n"/>
+			<Policies>
+				<OnStartupTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="128 KB"/>
+				<TimeBasedTriggeringPolicy />
+			</Policies>
+		</RollingFile>
+	</Appenders>
+	<Loggers>
+		<Root level="Error">
+			<AppenderRef ref="File"/>
+			<AppenderRef ref="Console"/>
+		</Root>
+	</Loggers>
+</Configuration>
