@@ -8,7 +8,7 @@ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
 <uri>video</uri>
 <tag>
 <name>video</name>
-<tag-class>com.semernik.rockFest.tag.VideoTag</tag-class>
+<tag-class>com.semernik.rockfest.tag.VideoTag</tag-class>
 <body-content>empty</body-content>
 	<attribute>
 		<name>url</name>

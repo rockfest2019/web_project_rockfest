@@ -10,6 +10,7 @@ public enum AttributeName {
 	SINGERS("singers"),
 	COMMENTS("comments"),
 	COMMENTS_FAILURE("comments_failure"),
+	USERS("users"),
 	USER_LOGIN("user_login"),
 	USER_ID("user_id"),
 	ROLE("role"),
@@ -45,7 +46,9 @@ public enum AttributeName {
 	POSITION("position"),
 	RATING_END("rating_end"),
 	AJAX_COMMAND("ajax_command"),
-	ENTITIES("entities")
+	ENTITIES("entities"),
+	DATE("date"),
+	GENRE_ERROR("genre_error")
 	;
 
 	private String name;

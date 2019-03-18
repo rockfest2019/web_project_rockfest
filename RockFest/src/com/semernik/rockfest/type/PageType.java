@@ -25,7 +25,8 @@ public enum PageType {
 	LOCALE,
 	SINGER_COMPOSITIONS,
 	GENRE_COMPOSITIONS,
-	SEARCH
+	SEARCH,
+	ADMIN
 	;
 
 	@Override

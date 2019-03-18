@@ -10,12 +10,8 @@
 	<fmt:setBundle basename="language"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title><fmt:message key="genres"/></title>
-	<style type="text/css">
-		.rating{
-			display: inline-block;
-			background: #999;
-		}
-	</style>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/ratingDetails.js"></script>
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/ratings.css">
 </head>
 <body>
 	<header> <fmt:message key="genres"/></header>
@@ -37,7 +33,9 @@
 							<input type="submit" value = <fmt:message key="rating"/>><c:out value="${(genre.melodyRating+genre.textRating+genre.musicRating+genre.vocalRating)/
 									(genre.votedUsersCount*4)}"></c:out>
 						</form>
-						<br>
+						<button id="showRating${genre.genreId}" onclick="showRating(${genre.genreId})">show ratings</button>
+						<button id="hideRating${genre.genreId}" onclick="hideRating(${genre.genreId})" class="hideRatings">hide ratings</button>
+						<section id="${genre.genreId}" class="ratings">
 						<section class = "rating">
 							<form action = "${pageContext.request.contextPath }/RockFest">
 								<input type="text" name="ratingType" value="melody" hidden>
@@ -68,6 +66,8 @@
 						</section>
 						<section><h2><b><fmt:message key="voted_users_count"/></b><c:out value=" ${genre.votedUsersCount }"></c:out></h2></section>
 					</section>
+					</section>
+					<br>
 				</c:if>
 				</c:forEach>
 		</section>

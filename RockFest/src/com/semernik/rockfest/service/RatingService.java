@@ -72,6 +72,11 @@ public class RatingService {
 		} catch (DaoException e) {
 			logger.error("User rating was not saved ", e);
 		}
+		content.setUsingCurrentPage(true);
+		if (saved){
+			Map<String, Object> currrentPageAttributes = content.getCurrentPageAttributes();
+			currrentPageAttributes.put(AttributeName.USER_RATING.toString(), rating);
+		}
 		return saved;
 	}
 
@@ -196,6 +201,7 @@ public class RatingService {
 	 * @return true, if successful
 	 */
 	private boolean findRatings(SessionRequestContent content, String comparingEntity){
+		System.out.println("findRatings");
 		Map<String, String[]> parameters = content.getRequestParameters();
 		String comparatorName = parameters.get(ParameterName.RATING_TYPE.toString())[0];
 		RatingUtil ratingUtil = RatingUtil.getInstance();

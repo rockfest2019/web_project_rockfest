@@ -112,7 +112,7 @@ public class CompositionLinksDaoImpl implements CompositionLinksDao {
 				+ "JOIN Users ON authorId=userId WHERE compositionId=?;"),
 		SAVE_COMPOSITION_LINK("INSERT INTO CompositionLinks(linkId, content, date, authorId, compositionId)"
 				+ " VALUES(?,?,?,?,?);"),
-		DELETE_COMPOSITION_LINK("DELETE FROM CompositionLinks WWHERE linkId=?;")
+		DELETE_COMPOSITION_LINK("DELETE FROM CompositionLinks WHERE linkId=?;")
 
 		;
 

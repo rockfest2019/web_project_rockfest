@@ -2,6 +2,7 @@
     pageEncoding="utf-8"%>
  <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
   <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+  <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
   <%@ taglib prefix="ctg" uri="video" %>
 <html>
 <head>
@@ -10,12 +11,10 @@
 	<fmt:setBundle basename="language"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title><fmt:message key="composition"/></title>
-	<style type="text/css">
-		.rating{
-			display: inline-block;
-			background: #999;
-		}
-	</style>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/entity.js"></script>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/genresAjax.js"></script>
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/ratings.css">
+	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/entity.css">
 </head>
 <body>
 	<header><fmt:message key="composition"/></header>
@@ -25,8 +24,21 @@
 		<c:set var="user_rating" value="${current_page_attributes['user_rating'] }"></c:set>
 		<c:set var="comments" value="${current_page_attributes['comments'] }"></c:set>
 		<c:set var="links" value="${current_page_attributes['links'] }"></c:set>
+		<c:set var="genre_error" value="${current_page_attributes['genre_error'] }"></c:set>
 		<h1><fmt:message key="composition"/></h1>
-				<section><b><fmt:message key="title"/></b><h2><c:out value="${composition.title }"></c:out></h2></section>
+				<section>
+					<b><fmt:message key="title"/></b><h2><c:out value="${composition.title }"></c:out></h2>
+					<c:if test="${role eq 'admin' }">
+						<button id="showTitleChange" class="showTitleChange" onclick="showElement('titleChangeForm', 'hideTitleChange', 'showTitleChange');">Title change</button>
+						<button id="hideTitleChange" class="hideTitleChange" onclick="hideElement('titleChangeForm', 'showTitleChange', 'hideTitleChange');">Title change</button>
+						<form id="titleChangeForm" class="titleChangeForm" action="${pageContext.request.contextPath }/RockFest" method="post">
+							<input type="text" name="command" value="change_composition_title" hidden>
+							<input type="text" name="id" value="${composition.compositionId }" hidden>
+							<input type="text" name="title">New title
+							<input type="submit" value="change title">
+						</form>
+					</c:if>
+				</section>
 				<section><b><fmt:message key="singer"/></b>
 					<form action="${pageContext.request.contextPath }/RockFest">
 					<input name="id" value ="${composition.singerId}" hidden></input>
@@ -35,18 +47,55 @@
 				</section>
 				<section>
 					<b><fmt:message key="genres"/></b>
+					<c:out value="${genre_error }"></c:out>
 					<c:forEach var="genre" items="${composition.genres }" varStatus="Status">
-				<form action="${pageContext.request.contextPath }/RockFest">
-					<input name="id" value ="${genre.genreId}" hidden></input>
-					<button name="command" value="find_genre"><c:out value="${genre.title }"></c:out></button>
-				</form>
-				</c:forEach>
+						<form action="${pageContext.request.contextPath }/RockFest">
+							<input name="id" value ="${genre.genreId}" hidden></input>
+							<button name="command" value="find_genre"><c:out value="${genre.title }"></c:out></button>
+						</form>
+					</c:forEach>
+					<c:if test="${not empty user_id }">
+						<button id="all_genres" onclick="findGenresForComposition(${composition.compositionId},'genresForComposition');">Change genres</button>
+						<section id="genresForComposition">
+
+						</section>
+					</c:if>
+				</section>
+				<section><b><fmt:message key="year"/></b>
+					<h2><c:out value="${fn:substring(composition.year, 0, 4)}"></c:out></h2>
+					<c:if test="${not empty user_id }">
+						<button id="showYearChange" class="showYearChange" onclick="showElement('yearChangeForm', 'hideYearChange', 'showYearChange');">Year change</button>
+						<button id="hideYearChange" class="hideYearChange" onclick="hideElement('yearChangeForm', 'showYearChange', 'hideYearChange');">Year change</button>
+						<form id="yearChangeForm" class="yearChangeForm" action="${pageContext.request.contextPath }/RockFest" method="post">
+							<input type="text" name="command" value="update_composition_year" hidden>
+							<input type="text" name="id" value="${composition.compositionId }" hidden>
+							<p><fmt:message key="composition_year"/>
+								<select id="year" name="year">
+									<script>
+										for (var i=1940;i<2030;i++){
+											document.write('<option value="'+i+'">'+i+'</option>');
+										}
+									</script>
+								</select>
+							</p>
+							<input type="submit" value="change year">
+						</form>
+					</c:if>
 				</section>
 				<section>
 					<b><fmt:message key="links"/></b>
 					<c:forEach var="link" items="${links }" varStatus="Status">
 						<section>
-							<p><a href="${link.url }">Link</a></p>
+							<p>
+								<a href="${link.url }">Link</a>
+								<c:if test="${role eq 'admin' }">
+									<form id="linkDeletionForm" class="linkDeletionForm" action="${pageContext.request.contextPath }/RockFest" method="post">
+										<input type="text" name="command" value="delete_composition_link" hidden>
+										<input type="text" name="id" value="${link.linkId }" hidden>
+										<input type="submit" value="delete link">
+									</form>
+								</c:if>
+							</p>
 							<ctg:video url="${link.url }"/>
 						</section>
 					</c:forEach>
@@ -62,7 +111,6 @@
 						</c:if>
 					</section>
 				</section>
-				<section><b><fmt:message key="year"/></b><h2><c:out value="${composition.year }"></c:out></h2></section>
 				<section>
 				<c:if test="${ composition.votedUsersCount == 0}">
 					<fmt:message key="rating_lack_message"/>
@@ -169,6 +217,13 @@
 							<c:out value="${comment.authorLogin }"></c:out>
 							<c:out value="${comment.date }"></c:out><br>
 							<c:out value="${comment.content }"></c:out>
+							<c:if test="${role eq 'admin' }">
+								<form id="commentDeletionForm" class="commentDeletionForm" action="${pageContext.request.contextPath }/RockFest" method="post">
+									<input type="text" name="command" value="delete_composition_comment" hidden>
+									<input type="text" name="id" value="${comment.commentId }" hidden>
+									<input type="submit" value="delete comment">
+								</form>
+							</c:if>
 						</section>
 					</c:forEach>
 				</section>

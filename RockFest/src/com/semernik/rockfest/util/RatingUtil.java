@@ -77,14 +77,24 @@ public class RatingUtil {
 	 * @param rating the rating
 	 */
 	public void transformToAverageRatings(EntityRating rating){
+		System.out.println("transformToAverageRatings");
 		int votedUsersCount = rating.getVotedUsersCount();
 		if (votedUsersCount == 0){
 			return;
 		}
-		rating.setMelodyRating(rating.getMelodyRating() / votedUsersCount);
-		rating.setTextRating(rating.getTextRating() / votedUsersCount);
-		rating.setMusicRating(rating.getMusicRating() / votedUsersCount);
-		rating.setVocalRating(rating.getVocalRating() / votedUsersCount);
+		rating.setMelodyRating( roundToHundredth(rating.getMelodyRating() / votedUsersCount));
+		rating.setTextRating( roundToHundredth(rating.getTextRating() / votedUsersCount));
+		rating.setMusicRating( roundToHundredth(rating.getMusicRating() / votedUsersCount));
+		rating.setVocalRating( roundToHundredth(rating.getVocalRating() / votedUsersCount));
+		System.out.println(rating.getEntityTitle());
+	}
+
+	private double roundToHundredth(double d) {
+		d *=100;
+		d = Math.round(d);
+		d /= 100;
+		System.out.println(d);
+		return d;
 	}
 
 	/**

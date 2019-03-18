@@ -10,90 +10,8 @@
 	<fmt:setBundle basename="language"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title><fmt:message key="ratings"/></title>
-	<script type="text/javascript">
-		window.onload = function (){
-			var url = 'http://localhost:8080/RockFest/RockFest';
-			var elementsCount = 5;
-			var parameters = 'ver=9&elementsCount=' + elementsCount;
-			document.getElementById('composition_rating').onclick = function (){
-				document.getElementById('prev').style.display = 'block';
-				document.getElementById('next').style.display = 'block';
-				var commandParameter = 'command=compositions_ratings_ajax';
-				var ratingTypeParameter = 'ratingType=general';
-				var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
-				document.getElementById('url').value = urlWithParameters;
-				var position = 'position=0';
-				urlWithParameters = urlWithParameters + '&'+ position;
-				ajax(urlWithParameters);
-			}
 
-			document.getElementById('singer_rating').onclick = function (){
-				document.getElementById('prev').style.display = 'block';
-				document.getElementById('next').style.display = 'block';
-				var commandParameter = 'command=singers_ratings_ajax';
-				var ratingTypeParameter = 'ratingType=general';
-				var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
-				document.getElementById('url').value = urlWithParameters;
-				var position = 'position=0';
-				urlWithParameters = urlWithParameters + '&'+ position;
-				ajax(urlWithParameters);
-			}
-
-			document.getElementById('genre_rating').onclick = function (){
-				document.getElementById('prev').style.display = 'block';
-				document.getElementById('next').style.display = 'block';
-				var commandParameter = 'command=genres_ratings_ajax';
-				var ratingTypeParameter = 'ratingType=general';
-				var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
-				document.getElementById('url').value = urlWithParameters;
-				var position = 'position=0';
-				urlWithParameters = urlWithParameters + '&'+ position;
-				ajax(urlWithParameters);
-			}
-
-			document.getElementById('next').onclick = function (){
-				var urlWithParameters = document.getElementById('url').value;
-				position = 'position=' + document.getElementById('position').value;
-				var end = document.getElementById('end').value;
-				if (end == 'false'){
-					urlWithParameters = urlWithParameters + '&'+ position;
-					document.getElementById('prev').style.display = 'block';
-					ajax(urlWithParameters);
-				} else {
-					document.getElementById('next').style.display = 'none';
-				}
-
-			}
-
-			document.getElementById('prev').onclick = function (){
-				var urlWithParameters = document.getElementById('url').value;
-				var newPosition = document.getElementById('position').value;
-				var start = document.getElementById('start').value;
-				if (start == 'false'){
-					newPosition = newPosition - elementsCount*2;
-					position = 'position=' + newPosition;
-					urlWithParameters = urlWithParameters + '&'+ position;
-					document.getElementById('next').style.display = 'block';
-					ajax(urlWithParameters);
-				} else {
-					document.getElementById('prev').style.display = 'none';
-				}
-
-			}
-
-		}
-		function ajax(urlWithParameters) {
-			var request = new XMLHttpRequest();
-			request.onreadystatechange = function() {
-				if (request.readyState==4){
-					document.getElementById('ratings').innerHTML = request.responseText;
-				}
-			}
-
-			request.open('GET', urlWithParameters);
-			request.send();
-		}
-	</script>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/ajaxRating.js"></script>
 	<style type="text/css">
 		.rating{
 			display: inline-block;
@@ -124,34 +42,36 @@
 	<c:set var="rating_end" value="${current_page_attributes['rating_end'] }"></c:set>
 	<main>
 			<h1><fmt:message key="ratings"/></h1>
-			<button id="composition_rating">compositions rating</button>
-			<button id="singer_rating">singer rating</button>
-			<button id="genre_rating">genres rating</button>
+			<button id="composition_rating" onclick="compositionRating();">compositions rating</button>
+			<button id="singer_rating" onclick="singerRating();">singer rating</button>
+			<button id="genre_rating" onclick="genreRating();">genres rating</button>
 			<c:out value="${rating_failure }"></c:out>
 			<section id="ratings">
 				<input type="number" id="position" value="5" hidden>
 				<input type="text" id="start" value="true" hidden>
 				<input type="text" id="end" value="${rating_end }" hidden>
 				<c:if test="${not empty specific_rating }">
-					<c:if test="${comparing_entity eq 'composition' }">Compositions rating</c:if>
-					<c:if test="${comparing_entity eq 'genre' }">Genres rating</c:if>
-					<c:if test="${comparing_entity eq 'singer' }">Singers rating</c:if>
-					<c:if test="${comparator eq 'GENERAL' }">General rating</c:if>
-					<c:if test="${comparator eq 'MELODY' }">Melody rating</c:if>
-					<c:if test="${comparator eq 'TEXT' }">Text rating</c:if>
-					<c:if test="${comparator eq 'MUSIC' }">Music rating</c:if>
-					<c:if test="${comparator eq 'VOCAL' }">Vocal rating</c:if>
+					<c:if test="${comparing_entity eq 'composition' }"><h2>Compositions rating</h2></c:if>
+					<c:if test="${comparing_entity eq 'genre' }"><h2>Genres rating</h2></c:if>
+					<c:if test="${comparing_entity eq 'singer' }"><h2>Singers rating</h2></c:if>
+					<c:if test="${comparator eq 'GENERAL' }"><h2>General rating</h2></c:if>
+					<c:if test="${comparator eq 'MELODY' }"><h2>Melody rating</h2></c:if>
+					<c:if test="${comparator eq 'TEXT' }"><h2>Text rating</h2></c:if>
+					<c:if test="${comparator eq 'MUSIC' }"><h2>Music rating</h2></c:if>
+					<c:if test="${comparator eq 'VOCAL' }"><h2>Vocal rating</h2></c:if>
 					<c:forEach var="rating" items="${ratings }" varStatus="Status">
 						<form action="${pageContext.request.contextPath }/RockFest">
 							<input name="id" value ="${rating.entityId}" hidden>
 							<button name="command" value="${entity_command }"><c:out value="${rating.entityTitle }"></c:out></button>
 						</form>
-						<section>
-							<form action = "${pageContext.request.contextPath }/RockFest">
-								<input type="text" name="ratingType" value="general" hidden>
-								<input type="text" name="command" value="${rating_command }" hidden>
-								<input type="submit" value = <fmt:message key="rating"/>><c:out value="${rating.rating}"></c:out>
-							</form>
+						<section class="rating_bg">
+							<section class = "rating">
+								<form action = "${pageContext.request.contextPath }/RockFest">
+									<input type="text" name="ratingType" value="general" hidden>
+									<input type="text" name="command" value="${rating_command }" hidden>
+									<input type="submit" value = <fmt:message key="rating"/>><h3><c:out value="${rating.rating}"></c:out></h3>
+								</form>
+							</section>
 							<section class = "rating">
 								<form action = "${pageContext.request.contextPath }/RockFest">
 									<input type="text" name="ratingType" value="melody" hidden>
@@ -227,8 +147,8 @@
 				</c:if>
 
 			</section>
-			<button id='prev' class="navigationAjax">Prev page</button>
-			<button id='next' class="navigationAjax">Next page</button>
+			<button id='prev' class="navigationAjax" onclick="prev();">Prev page</button>
+			<button id='next' class="navigationAjax" onclick="next();">Next page</button>
 			<input type="text" id="url" value='http://localhost:8080/RockFest/RockFest?ver=4&ratingType=${comparator }&command=${ajax_command}&elementsCount=5' hidden>
 
 

@@ -16,29 +16,15 @@ import com.semernik.rockfest.type.SendingMethod;
  */
 public class SessionRequestContent {
 
-	/** The request attributes. */
+
 	private Map <String, Object> requestAttributes = new HashMap<>();
-
-	/** The request parameters. */
 	private Map <String, String[]> requestParameters = new HashMap<>();
-
-	/** The session attributes. */
 	private Map <String, Object> sessionAttributes = new HashMap<>();
-
-	/** The use current page. */
 	private boolean useCurrentPage;
-
-	/** The ajax response. */
 	private String ajaxResponse;
-
-	/** The sending method. */
 	private SendingMethod sendingMethod;
 
-	/**
-	 * Extract values from request.
-	 *
-	 * @param request the request
-	 */
+
 	void extractValuesFromRequest(HttpServletRequest request){
 		String name;
 		Enumeration <String> attributeNames = request.getAttributeNames();

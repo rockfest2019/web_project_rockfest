@@ -85,4 +85,6 @@ public interface UsersDao extends Dao {
 	 */
 	Optional<UserProfile> findUserProfileByUserId(long userId) throws DaoException;
 
+	boolean saveBanExpirationDate (long userId, long banExpirationDate) throws DaoException;
+
 }

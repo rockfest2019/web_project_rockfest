@@ -1,113 +1,55 @@
 package com.semernik.rockfest.util;
 
+import java.util.Collection;
 import java.util.List;
 
 import com.semernik.rockfest.entity.EntityRating;
+import com.semernik.rockfest.entity.Genre;
+import com.semernik.rockfest.type.CommandType;
 
 // TODO: Auto-generated Javadoc
 /**
  * The Class RatingsAjaxUtil.
  */
-public class RatingsAjaxUtil {
+public class AjaxUtil {
 
-	/** The instance. */
-	private static RatingsAjaxUtil instance = new RatingsAjaxUtil();
+	private static AjaxUtil instance = new AjaxUtil();
 
-	/** The Constant POSITION_INPUT. */
 	private static final String POSITION_INPUT = "<input type='number' id='position' value='";
-
-	/** The Constant HIDDEN. */
 	private static final String HIDDEN = "' hidden>";
-
-	/** The Constant START_INPUT. */
 	private static final String START_INPUT = "<input type='text' id='start' value='";
-
-	/** The Constant END_INPUT. */
 	private static final String END_INPUT = "<input type='text' id='end' value='";
-
-	/** The Constant HTML_H_2. */
 	private static final String HTML_H_2 = "<h2>";
-
-	/** The Constant HTML_H_2_CLOSE. */
 	private static final String HTML_H_2_CLOSE = "</h2>";
-
-	/** The Constant NEW_LINE. */
 	private static final String NEW_LINE = "\n";
-
-	/** The Constant HTML_NEW_LINE. */
 	private static final String HTML_NEW_LINE = "<br>";
-
-	/** The Constant ID_INPUT. */
-	private static final String ID_INPUT = "<input name='id' value ='";
-
-	/** The Constant BUTTON_CLOSE. */
+	private static final String ID_INPUT = "<input type='text' name='id' value ='";
 	private static final String BUTTON_CLOSE = "</button>";
-
-	/** The Constant COMMAND_BUTTON. */
 	private static final String COMMAND_BUTTON = "<button name='command' value='";
-
-	/** The Constant BRACKET_CLOSE. */
 	private static final String BRACKET_CLOSE = "'>";
-
-	/** The Constant RATING_TYPE_INPUT. */
 	private static final String RATING_TYPE_INPUT = "<input type='text' name='ratingType' value='";
-
-	/** The Constant COMMAND_INPUT. */
 	private static final String COMMAND_INPUT = "<input type='text' name='command' value='";
-
-	/** The Constant HTML_H_3. */
 	private static final String HTML_H_3 = "<h3>";
-
-	/** The Constant HTML_H_3_CLOSE. */
 	private static final String HTML_H_3_CLOSE = "</h3>";
-
-	/** The Constant SUBMIT_INPUT. */
 	private static final String SUBMIT_INPUT = "<input type='submit' name='command' value='";
-
-	/** The Constant RATING. */
 	private static final String RATING = "_rating'>";
-
-	/** The Constant BG_RATING_SECTION. */
 	private static final String BG_RATING_SECTION = "<section class='rating_bg'>";
-
-	/** The Constant RATING_SECTION. */
 	private static final String RATING_SECTION = "<section class='rating'>";
-
-	/** The Constant SECTION. */
 	private static final String SECTION = "<section>";
-
-	/** The Constant SECTION_CLOSE. */
 	private static final String SECTION_CLOSE = "</section>";
-
-	/** The Constant FORM. */
 	private static final String FORM = "<form action='/RockFest/RockFest'>";
-
-	/** The Constant FORM_CLOSE. */
+	private static final String POST_FORM = "<form action='/RockFest/RockFest' method='post'>";
 	private static final String FORM_CLOSE = "</form>";
-
-	/** The Constant HTML_B. */
 	private static final String HTML_B = "<b>";
-
-	/** The Constant HTML_B_CLOSE. */
 	private static final String HTML_B_CLOSE = "</b>";
-
-	/** The Constant HTML_P. */
 	private static final String HTML_P = "<p>";
-
-	/** The Constant HTML_P_CLOSE. */
 	private static final String HTML_P_CLOSE = "</p>";
 
-	/**
-	 * Instantiates a new ratings ajax util.
-	 */
-	private RatingsAjaxUtil(){}
 
-	/**
-	 * Gets the single instance of RatingsAjaxUtil.
-	 *
-	 * @return single instance of RatingsAjaxUtil
-	 */
-	public static RatingsAjaxUtil getInstance(){
+	private AjaxUtil(){}
+
+
+	public static AjaxUtil getInstance(){
 		return instance;
 	}
 
@@ -133,14 +75,6 @@ public class RatingsAjaxUtil {
 		return builder.toString();
 	}
 
-	/**
-	 * Adds the position.
-	 *
-	 * @param builder the builder
-	 * @param position the position
-	 * @param elementsCount the elements count
-	 * @param ratingSize the rating size
-	 */
 	private void addPosition(StringBuilder builder, int position, int elementsCount, int ratingSize) {
 		int newPosition = position + elementsCount;
 		boolean end = false;
@@ -163,13 +97,6 @@ public class RatingsAjaxUtil {
 
 	}
 
-	/**
-	 * Adds the header.
-	 *
-	 * @param entityType the entity type
-	 * @param comparatorType the comparator type
-	 * @param builder the builder
-	 */
 	private void addHeader(String entityType, String comparatorType, StringBuilder builder) {
 		String comparatorMessage = RatingType.valueOf(comparatorType.toUpperCase()).toString();
 		builder.append(HTML_H_2);
@@ -181,28 +108,12 @@ public class RatingsAjaxUtil {
 		builder.append(NEW_LINE);
 	}
 
-	/**
-	 * Adds the ratings.
-	 *
-	 * @param ratings the ratings
-	 * @param builder the builder
-	 * @param entityCommand the entity command
-	 * @param ratingCommand the rating command
-	 */
 	private void addRatings(List<EntityRating> ratings, StringBuilder builder, String entityCommand, String ratingCommand) {
 		for (EntityRating rating : ratings){
 			addRating(rating, builder, entityCommand, ratingCommand);
 		}
 	}
 
-	/**
-	 * Adds the rating.
-	 *
-	 * @param rating the rating
-	 * @param builder the builder
-	 * @param entityCommand the entity command
-	 * @param ratingCommand the rating command
-	 */
 	private void addRating(EntityRating rating, StringBuilder builder, String entityCommand, String ratingCommand) {
 		addTitle(rating.getEntityTitle(), rating.getEntityId(), entityCommand, builder);
 		addRatingBackgroundSectionStart(builder);
@@ -212,14 +123,6 @@ public class RatingsAjaxUtil {
 		builder.append(HTML_NEW_LINE);
 	}
 
-	/**
-	 * Adds the title.
-	 *
-	 * @param entityTitle the entity title
-	 * @param entityId the entity id
-	 * @param entityCommand the entity command
-	 * @param builder the builder
-	 */
 	private void addTitle(String entityTitle, long entityId, String entityCommand, StringBuilder builder) {
 		addFormStart(builder);
 		builder.append(ID_INPUT + entityId + HIDDEN);
@@ -227,13 +130,6 @@ public class RatingsAjaxUtil {
 		addFormEnd(builder);
 	}
 
-	/**
-	 * Adds the rating sections.
-	 *
-	 * @param rating the rating
-	 * @param ratingCommand the rating command
-	 * @param builder the builder
-	 */
 	private void addRatingSections(EntityRating rating, String ratingCommand, StringBuilder builder) {
 		addRatingSection(RatingType.GENERAL.name().toLowerCase(), rating.getRating(), ratingCommand, builder);
 		addRatingSection(RatingType.MELODY.name().toLowerCase(), rating.getMelodyRating(), ratingCommand, builder);
@@ -243,14 +139,6 @@ public class RatingsAjaxUtil {
 
 	}
 
-	/**
-	 * Adds the rating section.
-	 *
-	 * @param ratingType the rating type
-	 * @param rating the rating
-	 * @param ratingCommand the rating command
-	 * @param builder the builder
-	 */
 	private void addRatingSection(String ratingType, double rating, String ratingCommand, StringBuilder builder) {
 		addRatingSectionStart(builder);
 		addFormStart(builder);
@@ -270,48 +158,22 @@ public class RatingsAjaxUtil {
 
 	}
 
-	/**
-	 * Adds the rating background section start.
-	 *
-	 * @param builder the builder
-	 */
 	private void addRatingBackgroundSectionStart(StringBuilder builder) {
 		builder.append(BG_RATING_SECTION);
 	}
 
-	/**
-	 * Adds the rating section start.
-	 *
-	 * @param builder the builder
-	 */
 	private void addRatingSectionStart(StringBuilder builder) {
 		builder.append(RATING_SECTION);
 	}
 
-	/**
-	 * Adds the section start.
-	 *
-	 * @param builder the builder
-	 */
 	private void addSectionStart(StringBuilder builder) {
 		builder.append(SECTION);
 	}
 
-	/**
-	 * Adds the section end.
-	 *
-	 * @param builder the builder
-	 */
 	private void addSectionEnd(StringBuilder builder) {
 		builder.append(SECTION_CLOSE);
 	}
 
-	/**
-	 * Adds the voted users count.
-	 *
-	 * @param votedUsersCount the voted users count
-	 * @param builder the builder
-	 */
 	private void addVotedUsersCount(int votedUsersCount, StringBuilder builder) {
 		addSectionStart(builder);
 		builder.append(HTML_H_2);
@@ -326,54 +188,33 @@ public class RatingsAjaxUtil {
 		builder.append(NEW_LINE);
 	}
 
-	/**
-	 * Adds the form start.
-	 *
-	 * @param builder the builder
-	 */
 	private void addFormStart(StringBuilder builder) {
 		builder.append(FORM);
 
 	}
 
-	/**
-	 * Adds the form end.
-	 *
-	 * @param builder the builder
-	 */
+	private void addPostFormStart(StringBuilder builder) {
+		builder.append(POST_FORM);
+
+	}
+
 	private void addFormEnd(StringBuilder builder) {
 		builder.append(FORM_CLOSE);
 	}
 
-	/**
-	 * The Enum RatingType.
-	 */
+
 	private static enum RatingType {
 
-		/** The general. */
 		GENERAL("General rating"),
-
-		/** The melody. */
 		MELODY("Melody rating"),
-
-		/** The text. */
 		TEXT("Text rating"),
-
-		/** The music. */
 		MUSIC("Music rating"),
-
-		/** The vocal. */
-		VOCAL("Vocal rating"),
+		VOCAL("Vocal rating")
 		;
 
-		/** The message. */
 		private String message;
 
-		/**
-		 * Instantiates a new rating type.
-		 *
-		 * @param message the message
-		 */
+
 		RatingType(String message){
 			this.message = message;
 		}
@@ -387,29 +228,58 @@ public class RatingsAjaxUtil {
 		}
 	}
 
-	/**
-	 * The Enum LocalizedMessageKey.
-	 */
+
 	private static enum LocalizedMessageKey {
 
-		/** The rating. */
 		RATING,
-
-		/** The melody rating. */
 		MELODY_RATING,
-
-		/** The text rating. */
 		TEXT_RATING,
-
-		/** The music rating. */
 		MUSIC_RATING,
-
-		/** The vocal rating. */
 		VOCAL_RATING,
-
-		/** The voted users count. */
 		VOTED_USERS_COUNT,
 
+	}
+
+	public String generateHTMLGenresForComposition(long compositionId, Collection<Genre> genres) {
+		StringBuilder builder = new StringBuilder();
+		addSectionStart(builder);
+		addPostFormStart(builder);
+		builder.append(COMMAND_INPUT);
+		builder.append(CommandType.UPDATE_COMPOSITION_GENRE.name().toLowerCase());
+		builder.append(HIDDEN);
+		builder.append(ID_INPUT);
+		builder.append(compositionId);
+		builder.append(HIDDEN);
+		builder.append("<input type='text' name='test' value='testValue' hidden>\n");
+		addGenresForComposition(genres, builder);
+		addSubmit("save genres", builder);
+		builder.append(NEW_LINE);
+		addFormEnd(builder);
+		addSectionEnd(builder);
+		return builder.toString();
+	}
+
+
+	private void addGenresForComposition(Collection<Genre> genres, StringBuilder builder) {
+		for (Genre genre : genres){
+			addGenreForComposition(genre, builder);
+		}
+
+	}
+
+	private void addGenreForComposition(Genre genre, StringBuilder builder) {
+		builder.append("<input type='checkbox' name='genresIds' value='");
+		builder.append(genre.getGenreId());
+		builder.append(BRACKET_CLOSE);
+		builder.append(genre.getTitle());
+		builder.append(HTML_NEW_LINE);
+		builder.append(NEW_LINE);
+	}
+
+	private void addSubmit(String value, StringBuilder builder) {
+		builder.append("<input type='submit' value='");
+		builder.append(value);
+		builder.append("'>");
 	}
 
 }

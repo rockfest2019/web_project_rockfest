@@ -21,7 +21,26 @@ public class User {
 	/** The email. */
 	private String email;
 
+	private long banExpirationDate;
 
+
+	/**
+	 * Instantiates a new user.
+	 *
+	 * @param userId the user id
+	 * @param login the login
+	 * @param role the role
+	 * @param password the password
+	 * @param email the email
+	 */
+	public User (long userId, String login, String role, String password, String email, long banExpirationDate){
+		this.userId = userId;
+		this.login = login;
+		this.role = role;
+		this.password = password;
+		this.email = email;
+		this.banExpirationDate = banExpirationDate;
+	}
 
 	/**
 	 * Instantiates a new user.
@@ -30,8 +49,17 @@ public class User {
 	 * @param login the login
 	 */
 	public User (long userId, String login){
-		this.userId = userId;
-		this.login = login;
+		this(userId, login, 0);
+	}
+
+	/**
+	 * Instantiates a new user.
+	 *
+	 * @param userId the user id
+	 * @param login the login
+	 */
+	public User (long userId, String login, long banExpirationDate){
+		this(userId, login, null, null, banExpirationDate);
 	}
 
 	/**
@@ -43,10 +71,7 @@ public class User {
 	 * @param email the email
 	 */
 	public User (long userId, String login, String password, String email){
-		this.userId = userId;
-		this.login = login;
-		this.password = password;
-		this.email = email;
+		this(userId, login, password, email, 0);
 	}
 
 	/**
@@ -54,16 +79,11 @@ public class User {
 	 *
 	 * @param userId the user id
 	 * @param login the login
-	 * @param role the role
 	 * @param password the password
 	 * @param email the email
 	 */
-	public User (long userId, String login, String role, String password, String email){
-		this.userId = userId;
-		this.login = login;
-		this.role = role;
-		this.password = password;
-		this.email = email;
+	public User (long userId, String login, String password, String email, long banExpirationDate){
+		this(userId, login, null, password, email, banExpirationDate);
 	}
 
 	/**
@@ -146,5 +166,12 @@ public class User {
 	public void setRole(String role) {
 		this.role = role;
 	}
+
+
+	public long getBanExpirationDate() {
+		return banExpirationDate;
+	}
+
+
 
 }

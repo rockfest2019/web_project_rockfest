@@ -273,6 +273,27 @@ public class Composition {
 	public Collection<Genre> getGenres() {
 		return genres;
 	}
+	
+	
+
+
+	public void setCompositionTitle(String compositionTitle) {
+		this.compositionTitle = compositionTitle;
+	}
+
+	public void setYear(String year) {
+		this.year = year;
+	}
+
+	public void setGenreEditorId(long genreEditorId) {
+		this.genreEditorId = genreEditorId;
+	}
+
+	public void setGenres(Collection<Genre> genres) {
+		this.genres = genres;
+	}
+
+
 
 
 	/**

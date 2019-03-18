@@ -49,4 +49,5 @@ public interface SingersDao extends Dao {
 	 */
 	Optional<Singer> findSingerById(long singerId) throws DaoException;
 
+	boolean changeSingerTitle(long singerId, String newTitle) throws DaoException;
 }

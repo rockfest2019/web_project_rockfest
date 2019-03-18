@@ -7,7 +7,7 @@ import java.util.Set;
 import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.ParameterName;
 
-public class RequeredParametersContainer {
+public class RequiredParametersContainer {
 
 	private static final Set<ParameterName> GENRE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.TITLE,
 			ParameterName.DESCRIPTION));
@@ -33,6 +33,10 @@ public class RequeredParametersContainer {
 	private static final Set<ParameterName> DESCRIPTION_UPDATE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.DESCRIPTION,
 			ParameterName.ID));
 	private static final Set<ParameterName> COMPOSITION_YEAR_UPDATE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.YEAR,
+			ParameterName.ID));
+	private static final Set<ParameterName> USER_BAN_DATE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.DATE,
+			ParameterName.ID));
+	private static final Set<ParameterName> TITLE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.TITLE,
 			ParameterName.ID));
 
 	private static final Set<AttributeName> SESSION_USER_SET = Collections.unmodifiableSet(EnumSet.of(AttributeName.USER_ID,
@@ -94,6 +98,14 @@ public class RequeredParametersContainer {
 
 	public static Set<ParameterName> getCompositionYearUpdateSet() {
 		return COMPOSITION_YEAR_UPDATE_SET;
+	}
+
+	public static Set<ParameterName> getUserBanDateSet() {
+		return USER_BAN_DATE_SET;
+	}
+
+	public static Set<ParameterName> getTitleSet() {
+		return TITLE_SET;
 	}
 
 	public static Set<AttributeName> getSessionUserSet() {

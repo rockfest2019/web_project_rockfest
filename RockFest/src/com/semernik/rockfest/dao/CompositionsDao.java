@@ -68,7 +68,7 @@ public interface CompositionsDao extends Dao {
 	 * @return the collection
 	 * @throws DaoException the dao exception
 	 */
-	Collection<Composition> findSingerCompositions(long singerId)throws DaoException;
+	Collection<Composition> findSingerCompositions(long singerId) throws DaoException;
 
 	/**
 	 * Find genre compositions.
@@ -77,6 +77,8 @@ public interface CompositionsDao extends Dao {
 	 * @return the collection
 	 * @throws DaoException the dao exception
 	 */
-	Collection<Composition> findGenreCompositions(long singerId)throws DaoException;
+	Collection<Composition> findGenreCompositions(long singerId) throws DaoException;
+
+	boolean changeCompositionTitle(long compositionId, String newTitle) throws DaoException;
 
 }

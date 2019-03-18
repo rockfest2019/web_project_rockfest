@@ -6,18 +6,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>Registration</title>
-<script type="text/javascript">
-			var check = function() {
-				  if (document.getElementById('password').value ==
-					document.getElementById('confirm_password').value) {
-					document.getElementById('message').style.color = 'green';
-					document.getElementById('message').innerHTML = 'matching';
-				  } else {
-					document.getElementById('message').style.color = 'red';
-					document.getElementById('message').innerHTML = 'not matching';
-				  }
-				}
-		</script>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/registration.js"></script>
 </head>
 <body>
 	<header>Registration</header>

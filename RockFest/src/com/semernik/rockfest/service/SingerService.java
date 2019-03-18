@@ -10,9 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.semernik.rockfest.container.ErrorMessagesContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
+import com.semernik.rockfest.dao.CommentsDao;
 import com.semernik.rockfest.dao.DaoException;
 import com.semernik.rockfest.dao.DaoFactory;
 import com.semernik.rockfest.dao.SingersDao;
+import com.semernik.rockfest.entity.Comment;
 import com.semernik.rockfest.entity.Singer;
 import com.semernik.rockfest.entity.Singer.SingerBuilder;
 import com.semernik.rockfest.type.AttributeName;
@@ -123,11 +125,25 @@ public class SingerService {
 		if (optional.isPresent()){
 			found = true;
 			content.getRequestAttributes().put(AttributeName.SINGER.toString(), optional.get());
+			addSingerComments(singerId, content);
 		}
 		if (content.getSessionAttributes().get(AttributeName.USER_ID.toString()) != null){
 			addUserSingerRatings(content);
 		}
 		return found;
+	}
+
+	private void addSingerComments(long singerId, SessionRequestContent content) {
+		CommentsDao commentsDao = DaoFactory.getCommentsDao();
+		Collection<Comment> comments = null;
+		try {
+			comments = commentsDao.findSingerCommentsBySingerId(singerId);
+			content.getRequestAttributes().put(AttributeName.COMMENTS.toString(), comments);
+		} catch (DaoException e) {
+			String errorMessage = ErrorMessagesContainer.findMessage(AttributeName.COMMENTS_FAILURE.toString());
+			content.getRequestAttributes().put(AttributeName.COMMENTS_FAILURE.toString(), errorMessage);
+			logger.error("Comments are not reachable ", e);
+		}
 	}
 
 	/**
@@ -162,7 +178,82 @@ public class SingerService {
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 		}
+		content.setUsingCurrentPage(true);
+		if (updated){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Singer singer = (Singer) currentPageAttributes.get(AttributeName.SINGER.toString());
+			singer.setDescription(newDescription);
+		}
 		return updated;
+	}
+
+	public boolean deleteSingerComment(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long commentId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean deleted = false;
+		try {
+			deleted = dao.deleteSingerComment(commentId);
+		} catch (DaoException e) {
+			logger.error("Data access error", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (deleted){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Collection<Comment> comments = (Collection<Comment>) currentPageAttributes.get(AttributeName.COMMENTS.toString());
+			comments.removeIf(a -> a.getCommentId() == commentId);
+		}
+		return deleted;
+	}
+
+	public boolean changeSingerTitle(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long singerId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		String newTitle = parameters.get(ParameterName.TITLE.toString())[0];
+		SingersDao dao = DaoFactory.getSingersDao();
+		boolean changed = false;
+		try {
+			changed = dao.changeSingerTitle(singerId, newTitle);
+		} catch (DaoException e) {
+			logger.error("Data access error", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (changed){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Singer singer = (Singer) currentPageAttributes.get(AttributeName.SINGER.toString());
+			singer.setTitle(newTitle);
+		}
+		return changed;
+	}
+
+	/**
+	 * Save singer comment.
+	 *
+	 * @param content the content
+	 * @return true, if successful
+	 */
+	public boolean saveSingerComment(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long commentId = GeneratorId.getInstance().generateSingerCommentId();
+		long commentedEntityId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		String commentContent = parameters.get(ParameterName.COMMENT_CONTENT.toString())[0];
+		Date date = new Date(System.currentTimeMillis());
+		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
+		Comment comment = new Comment(commentId, commentContent, date, authorId, commentedEntityId);
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean saved = false;
+		try {
+			saved = dao.saveSingerComment(comment);
+		} catch (DaoException e) {
+			logger.error("Comment is not saved ", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (saved){
+			Map<String, Object> currrentPageAttributes = content.getCurrentPageAttributes();
+			Collection<Comment> comments = (Collection<Comment>) currrentPageAttributes.get(AttributeName.COMMENTS.toString());
+			comments.add(comment);
+		}
+		return saved;
 	}
 
 }

@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.semernik.rockfest.container.RequeredParametersContainer;
+import com.semernik.rockfest.container.RequiredParametersContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.ParameterName;
@@ -96,16 +96,15 @@ public class GeneralValidator {
 	 */
 	private boolean validGenreOrSinger(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || !userValidator.validUser(content)
-				|| requestedParametersNamesMiss(content, RequeredParametersContainer.getGenreSet())){
+		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getGenreSet())){
 			return false;
 		}
-		boolean valid = true;;
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String description = requestParameters.get(ParameterName.DESCRIPTION.toString())[0];
 		String title = requestParameters.get(ParameterName.TITLE.toString())[0];
-		if ( description.length() > DESCRIPTION_LENGTH || title.length() > TITLE_LENGTH){
-			valid = false;
+		boolean valid = false;
+		if ( description.length() <= DESCRIPTION_LENGTH && title.length() <= TITLE_LENGTH){
+			valid = true;
 		}
 		return valid;
 	}
@@ -144,8 +143,8 @@ public class GeneralValidator {
 	 */
 	public boolean validComposition(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || !userValidator.validUser(content)
-				|| requestedParametersNamesMiss(content, RequeredParametersContainer.getCompositionSet()) || !genresIdsAreValid(content)){
+		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getCompositionSet())
+				|| !genresIdsAreValid(content)){
 			return false;
 		}
 				Map <String, String[]> requestParameters = content.getRequestParameters();
@@ -173,7 +172,7 @@ public class GeneralValidator {
 			int i = 0;
 			int len = genresIds.length;
 			while (valid && i < len){
-				valid = validId(genresIds[i]);
+				valid = validId(genresIds[i++]);
 			}
 		}
 		return valid;
@@ -214,8 +213,7 @@ public class GeneralValidator {
 	 */
 	public boolean validComment(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || !userValidator.validUser(content)
-				|| requestedParametersNamesMiss(content, RequeredParametersContainer.getCommentSet())){
+		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getCommentSet())){
 			return false;
 		}
 		Map <String, String[]> parameters = content.getRequestParameters();
@@ -236,8 +234,7 @@ public class GeneralValidator {
 	 */
 	public boolean validCompositionLink(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || !userValidator.validUser(content)
-				|| requestedParametersNamesMiss(content, RequeredParametersContainer.getCompositionLinkSet())){
+		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getCompositionLinkSet())){
 			return false;
 		}
 		Map <String, String[]> parameters = content.getRequestParameters();
@@ -322,7 +319,7 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	public boolean validAjaxRatingType(SessionRequestContent content){
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getAjaxRatingSet())){
+		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getAjaxRatingSet())){
 			content.setAjaxResponse(INVALID_PARAMETERS);
 			return false;
 		}
@@ -400,8 +397,8 @@ public class GeneralValidator {
 	 */
 	public boolean validDescriptionUpdate(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getDescriptionUpdateSet())
-				|| !userValidator.validUser(content)){
+		if (!userValidator.validUser(content)
+				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getDescriptionUpdateSet())){
 			return false;
 		}
 		String description = content.getRequestParameters().get(ParameterName.DESCRIPTION.toString())[0];
@@ -421,7 +418,7 @@ public class GeneralValidator {
 	 */
 	public boolean validCompositionGenres(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || !userValidator.validUser(content)){
+		if (!userValidator.validUser(content)){
 			return false;
 		}
 		String [] compositionIds = content.getRequestParameters().get(ParameterName.ID.toString());
@@ -440,14 +437,50 @@ public class GeneralValidator {
 	 */
 	public boolean validCompositionYear(SessionRequestContent content){
 		UserValidator userValidator = UserValidator.getInstance();
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getCompositionYearUpdateSet())
-				|| !userValidator.validUser(content)){
+		if (!userValidator.validUser(content)
+				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getCompositionYearUpdateSet())){
 			return false;
 		}
 		String id = content.getRequestParameters().get(ParameterName.ID.toString())[0];
 		String year = content.getRequestParameters().get(ParameterName.YEAR.toString())[0];
 		boolean valid = false;
 		if (validId(id) && validYearDescription(year)){
+			valid = true;
+		}
+		return valid;
+	}
+
+	public boolean validNewTitle(SessionRequestContent content){
+		UserValidator userValidator = UserValidator.getInstance();
+		if (!userValidator.validAdmin(content)
+				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getTitleSet())){
+			return false;
+		}
+		String id = content.getRequestParameters().get(ParameterName.ID.toString())[0];
+		String title = content.getRequestParameters().get(ParameterName.TITLE.toString())[0];
+		boolean valid = false;
+		if (title.length() <= TITLE_LENGTH && validId(id)){
+			valid = true;
+		}
+		return valid;
+	}
+
+	public boolean validCommentDeletion(SessionRequestContent content){
+		return validIdAndAdmin(content);
+	}
+
+	public boolean validCompositionLinkDeletion(SessionRequestContent content){
+		return validIdAndAdmin(content);
+	}
+
+	private boolean validIdAndAdmin(SessionRequestContent content) {
+		UserValidator userValidator = UserValidator.getInstance();
+		if (!userValidator.validAdmin(content)){
+			return false;
+		}
+		String [] Ids = content.getRequestParameters().get(ParameterName.ID.toString());
+		boolean valid = false;
+		if (Ids != null && validId(Ids[0])){
 			valid = true;
 		}
 		return valid;

@@ -115,7 +115,8 @@ public class UsersDaoImpl implements UsersDao{
 			while(result.next()){
 				long userId = result.getLong(1);
 				String login = result.getString(2);
-				User user = new User(userId, login);
+				long banExpirationDate = result.getLong(3);
+				User user = new User(userId, login, banExpirationDate);
 				users.add(user);
 			}
 		} catch (SQLException e){
@@ -144,7 +145,8 @@ public class UsersDaoImpl implements UsersDao{
 				String userPassword = result.getString(2);
 				String userEmail = result.getString(3);
 				String userRole = result.getString(4);
-				user = new User(userId, userLogin, userRole, userPassword, userEmail);
+				long banExpirationDate = result.getLong(5);
+				user = new User(userId, userLogin, userRole, userPassword, userEmail, banExpirationDate);
 			}
 		} catch (SQLException e) {
 			throw new DaoException("Failed to find user info by login", e);
@@ -172,7 +174,8 @@ public class UsersDaoImpl implements UsersDao{
 				String userPassword = result.getString(2);
 				String userEmail = result.getString(3);
 				String userRole = result.getString(4);
-				user = new User(userId, userLogin, userRole, userPassword, userEmail);
+				long banExpirationDate = result.getLong(5);
+				user = new User(userId, userLogin, userRole, userPassword, userEmail, banExpirationDate);
 			}
 		} catch (SQLException e) {
 			throw new DaoException("Failed to find user info by login", e);
@@ -189,7 +192,6 @@ public class UsersDaoImpl implements UsersDao{
 	public boolean saveNewUserInfo(User user) throws DaoException {
 		Connection con = null;
 		PreparedStatement st = null;
-		ResultSet result = null;
 		boolean saved = false;
 		try {
 			con = ConnectionPool.getInstance().takeConnection();
@@ -205,44 +207,11 @@ public class UsersDaoImpl implements UsersDao{
 		} catch (SQLException e) {
 			throw new DaoException("Failed to save user info", e);
 		} finally {
-			closeResultSet(result);
 			closeStatement(st);
 			closeConnection(con);
 		}
 		return saved;
 	}
-
-
-	private enum Query {
-
-		FIND_COMPOSITION_AUTHOR ("SELECT userId, login from Users JOIN Compositions ON authorId=userId WHERE compositionId=?;"),
-		FIND_COMPOSITION_YEAR_EDITOR ("SELECT userId, login from Users JOIN Compositions "
-				+ "ON yearEditorId=userId WHERE compositionId=?;"),
-		SAVE_USER ("INSERT INTO Users (userId, login, password, email) VALUES (?,?,?,?);"),
-		SAVE_USER_PASSWORD ("UPDATE USERS SET password=? WHERE userId=?;"),
-		SAVE_USER_INFO ("UPDATE USERS SET login=?, password=?, email=? WHERE userId=?;"),
-		FIND_ALL_USERS("SELECT userId, login FROM Users;"),
-		FIND_USER_BY_lOGIN("SELECT userId, password, email, Roles.title FROM Users JOIN Roles USING(roleId) WHERE login=?;"),
-		FIND_USER_BY_ID("SELECT login, password, email, Roles.title FROM Users JOIN Roles USING(roleId) WHERE userId=?;"),
-		FIND_USER_PROFILE_BY_USER_ID("SELECT DISTINCT email, (SELECT COUNT(compositionId) FROM Compositions WHERE "
-				+ "Compositions.authorId=userId) AS addedCompositionsCount, (SELECT COUNT(genreId) FROM Genres WHERE "
-				+ "Genres.authorId=userId) AS addedGenresCount, (SELECT COUNT(singerId) FROM Singers WHERE Singers.authorId=userId) "
-				+ "AS addedSingersCount, (SELECT COUNT(compositionId) FROM singleUserRating WHERE SingleUserRating.userId=users.userId) "
-				+ "AS assessedCompositionsCount FROM Users WHERE userId=?;"),
-		;
-
-		private String query;
-
-		Query (String query){
-			this.query = query;
-		}
-
-		@Override
-		public String toString(){
-			return query;
-		}
-	}
-
 
 	@Override
 	public Optional<UserProfile> findUserProfileByUserId(long userId) throws DaoException {
@@ -265,7 +234,7 @@ public class UsersDaoImpl implements UsersDao{
 						assessedCompositionsCount, email);
 			}
 		} catch (SQLException e) {
-			throw new DaoException("Failed to find user info by login", e);
+			throw new DaoException("Failed to find user profile", e);
 		} finally {
 			closeResultSet(result);
 			closeStatement(st);
@@ -273,6 +242,65 @@ public class UsersDaoImpl implements UsersDao{
 		}
 		return Optional.ofNullable(profile);
 	}
+
+	public boolean saveBanExpirationDate (long userId, long banExpirationDate) throws DaoException{
+		Connection con = null;
+		PreparedStatement st = null;
+		boolean saved = false;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.SAVE_BAN_EXPIRATION_DATE.toString());
+			st.setLong(1, banExpirationDate);
+			st.setLong(2, userId);
+			int affectedRows = st.executeUpdate();
+			if (affectedRows > 0){
+				saved = true;
+			}
+		} catch (SQLException e) {
+			throw new DaoException("Failed to save ban expiration date", e);
+		} finally {
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return saved;
+	}
+
+
+
+	private enum Query {
+
+		FIND_COMPOSITION_AUTHOR ("SELECT userId, login from Users JOIN Compositions ON authorId=userId WHERE compositionId=?;"),
+		FIND_COMPOSITION_YEAR_EDITOR ("SELECT userId, login from Users JOIN Compositions "
+				+ "ON yearEditorId=userId WHERE compositionId=?;"),
+		SAVE_USER ("INSERT INTO Users (userId, login, password, email) VALUES (?,?,?,?);"),
+		SAVE_USER_PASSWORD ("UPDATE USERS SET password=? WHERE userId=?;"),
+		SAVE_USER_INFO ("UPDATE USERS SET login=?, password=?, email=? WHERE userId=?;"),
+		FIND_ALL_USERS("SELECT userId, login, banExpirationDate FROM Users;"),
+		FIND_USER_BY_lOGIN("SELECT userId, password, email, Roles.title, banExpirationDate FROM Users JOIN Roles USING(roleId) WHERE"
+				+ " login=?;"),
+		FIND_USER_BY_ID("SELECT login, password, email, Roles.title, banExpirationDate FROM Users JOIN Roles USING(roleId) WHERE userId=?;"),
+		FIND_USER_PROFILE_BY_USER_ID("SELECT DISTINCT email, (SELECT COUNT(compositionId) FROM Compositions WHERE "
+				+ "Compositions.authorId=userId) AS addedCompositionsCount, (SELECT COUNT(genreId) FROM Genres WHERE "
+				+ "Genres.authorId=userId) AS addedGenresCount, (SELECT COUNT(singerId) FROM Singers WHERE Singers.authorId=userId) "
+				+ "AS addedSingersCount, (SELECT COUNT(compositionId) FROM singleUserRating WHERE SingleUserRating.userId=users.userId) "
+				+ "AS assessedCompositionsCount FROM Users WHERE userId=?;"),
+		SAVE_BAN_EXPIRATION_DATE("UPDATE USERS SET banExpirationDate=? WHERE userId=?;")
+		;
+
+		private String query;
+
+		Query (String query){
+			this.query = query;
+		}
+
+		@Override
+		public String toString(){
+			return query;
+		}
+	}
+
+
+
 
 
 }

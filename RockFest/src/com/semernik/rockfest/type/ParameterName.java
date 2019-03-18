@@ -26,7 +26,8 @@ public enum ParameterName {
 	URL("url"),
 	POSITION("position"),
 	ELEMENTS_COUNT("elementsCount"),
-	SEARCH_PATTERN("searchPattern")
+	SEARCH_PATTERN("searchPattern"),
+	DATE("date")
 	;
 
 	private String name;

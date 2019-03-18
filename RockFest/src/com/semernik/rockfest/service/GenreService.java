@@ -10,9 +10,11 @@ import org.apache.logging.log4j.Logger;
 
 import com.semernik.rockfest.container.ErrorMessagesContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
+import com.semernik.rockfest.dao.CommentsDao;
 import com.semernik.rockfest.dao.DaoException;
 import com.semernik.rockfest.dao.DaoFactory;
 import com.semernik.rockfest.dao.GenresDao;
+import com.semernik.rockfest.entity.Comment;
 import com.semernik.rockfest.entity.Genre;
 import com.semernik.rockfest.entity.Genre.GenreBuilder;
 import com.semernik.rockfest.type.AttributeName;
@@ -115,15 +117,15 @@ public class GenreService {
 		Long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
 		GenresDao dao = DaoFactory.getGenresDao();
 		Collection<Genre> genres = null;
-		boolean found = true;
+		boolean found = false;
 		try {
 			genres = dao.findGenresByCompositionId(compositionId);
+			content.getRequestAttributes().put(AttributeName.GENRES.toString(), genres);
+			found = true;
 		} catch (DaoException e) {
 			logger.error("Genres are not reachable", e);
 		}
-		if (found){
-			content.getRequestAttributes().put(AttributeName.GENRES.toString(), genres);
-		}
+
 		return found;
 	}
 
@@ -138,20 +140,34 @@ public class GenreService {
 		Long genreId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
 		GenresDao dao = DaoFactory.getGenresDao();
 		Optional<Genre> genre = Optional.empty();
+		boolean found = false;
 		try {
 			genre = dao.findGenreById(genreId);
+			if (genre.isPresent()){
+				found = true;
+				content.getRequestAttributes().put(AttributeName.GENRE.toString(), genre.get());
+				addGenreComments(genreId, content);
+			}
+			if (content.getSessionAttributes().get(AttributeName.USER_ID.toString()) != null){
+				addUserGenreRatings(content);
+			}
 		} catch (DaoException e) {
 			logger.error("Genre is not reachable", e);
 		}
-		boolean found = false;
-		if (genre.isPresent()){
-			found = true;
-			content.getRequestAttributes().put(AttributeName.GENRE.toString(), genre.get());
-		}
-		if (content.getSessionAttributes().get(AttributeName.USER_ID.toString()) != null){
-			addUserGenreRatings(content);
-		}
 		return found;
+	}
+
+	private void addGenreComments(long genreId, SessionRequestContent content) {
+		CommentsDao commentsDao = DaoFactory.getCommentsDao();
+		Collection<Comment> comments = null;
+		try {
+			comments = commentsDao.findGenreCommentsByGenreId(genreId);
+			content.getRequestAttributes().put(AttributeName.COMMENTS.toString(), comments);
+		} catch (DaoException e) {
+			String errorMessage = ErrorMessagesContainer.findMessage(AttributeName.COMMENTS_FAILURE.toString());
+			content.getRequestAttributes().put(AttributeName.COMMENTS_FAILURE.toString(), errorMessage);
+			logger.error("Comments are not reachable ", e);
+		}
 	}
 
 	/**
@@ -176,7 +192,7 @@ public class GenreService {
 	 */
 	public boolean updateGenreDescription(SessionRequestContent content){
 		Map<String, String[]> parameters = content.getRequestParameters();
-		Long genreId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		long genreId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
 		String newDescription = parameters.get(ParameterName.DESCRIPTION.toString())[0];
 		Long userId = (Long)content.getSessionAttributes().get(AttributeName.USER_ID.toString());
 		GenresDao dao = DaoFactory.getGenresDao();
@@ -186,7 +202,82 @@ public class GenreService {
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 		}
+		content.setUsingCurrentPage(true);
+		if (updated){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Genre genre = (Genre) currentPageAttributes.get(AttributeName.GENRE.toString());
+			genre.setDescription(newDescription);
+		}
 		return updated;
+	}
+
+	public boolean deleteGenreComment(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long commentId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean deleted = false;
+		try {
+			deleted = dao.deleteGenreComment(commentId);
+		} catch (DaoException e) {
+			logger.error("Data access error", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (deleted){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Collection<Comment> comments = (Collection<Comment>) currentPageAttributes.get(AttributeName.COMMENTS.toString());
+			comments.removeIf(a -> a.getCommentId() == commentId);
+		}
+		return deleted;
+	}
+
+	public boolean changeGenreTitle(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long genreId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		String newTitle = parameters.get(ParameterName.TITLE.toString())[0];
+		GenresDao dao = DaoFactory.getGenresDao();
+		boolean changed = false;
+		try {
+			changed = dao.changeGenreTitle(genreId, newTitle);
+		} catch (DaoException e) {
+			logger.error("Data access error", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (changed){
+			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
+			Genre genre = (Genre) currentPageAttributes.get(AttributeName.GENRE.toString());
+			genre.setTitle(newTitle);
+		}
+		return changed;
+	}
+
+	/**
+	 * Save genre comment.
+	 *
+	 * @param content the content
+	 * @return true, if successful
+	 */
+	public boolean saveGenreComment(SessionRequestContent content){
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long commentId = GeneratorId.getInstance().generateGenreCommentId();
+		long commentedEntityId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		String commentContent = parameters.get(ParameterName.COMMENT_CONTENT.toString())[0];
+		Date date = new Date(System.currentTimeMillis());
+		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
+		Comment comment = new Comment(commentId, commentContent, date, authorId, commentedEntityId);
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean saved = false;
+		try {
+			saved = dao.saveGenreComment(comment);
+		} catch (DaoException e) {
+			logger.error("Comment is not saved ", e);
+		}
+		content.setUsingCurrentPage(true);
+		if (saved){
+			Map<String, Object> currrentPageAttributes = content.getCurrentPageAttributes();
+			Collection<Comment> comments = (Collection<Comment>) currrentPageAttributes.get(AttributeName.COMMENTS.toString());
+			comments.add(comment);
+		}
+		return saved;
 	}
 
 }

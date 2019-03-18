@@ -5,18 +5,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Title</title>
-	<script type="text/javascript">
-			var check = function() {
-				  if (document.getElementById('password').value ==
-					document.getElementById('confirm_password').value) {
-					document.getElementById('message').style.color = 'green';
-					document.getElementById('message').innerHTML = 'matching';
-				  } else {
-					document.getElementById('message').style.color = 'red';
-					document.getElementById('message').innerHTML = 'not matching';
-				  }
-				}
-		</script>
+	<script type="text/javascript" src="${pageContext.request.contextPath }/js/registration.js"></script>
 </head>
 <body>
 	<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
@@ -24,10 +13,18 @@
 	<c:set var="user_profile" value="${current_page_attributes['user_profile'] }"></c:set>
 	<header>Header</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
+	<c:if test="${not empty user_id }">
 	<main>
 		<p>User profile</p>
 		<c:out value="${error_message }"></c:out>
 		<c:out value="${user_profile_change }"></c:out>
+		<section>
+			<c:if test="${role eq 'admin' }">
+				<form action="${pageContext.request.contextPath }/RockFest">
+					<button name="command" value="admin_page">Admin page</button>
+				</form>
+			</c:if>
+		</section>
 		<c:if test="${not empty user_profile }">
 		<p> Added compositions count: ${user_profile.addedCompositionsCount }</p>
 		<p> Added genres count: ${user_profile.addedGenresCount }</p>
@@ -56,5 +53,6 @@
 		</form>
 		</c:if>
 	</main>
+	</c:if>
 </body>
 </html>

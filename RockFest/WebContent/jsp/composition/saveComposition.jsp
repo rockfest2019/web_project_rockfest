@@ -37,7 +37,7 @@
 			<p><fmt:message key="composition_year"/>
 				<select id="year" name="year">
 					<script>
-						for (var i=1900;i<2030;i++){
+						for (var i=1940;i<2030;i++){
 							document.write('<option value="'+i+'">'+i+'</option>');
 						}
 					</script>

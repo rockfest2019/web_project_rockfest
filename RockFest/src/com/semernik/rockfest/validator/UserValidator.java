@@ -10,10 +10,11 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import com.semernik.rockfest.container.ErrorMessagesContainer;
-import com.semernik.rockfest.container.RequeredParametersContainer;
+import com.semernik.rockfest.container.RequiredParametersContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.ParameterName;
+import com.semernik.rockfest.type.Role;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -35,6 +36,8 @@ public class UserValidator {
 
 	/** The id pattern. */
 	private final Pattern ID_PATTERN = Pattern.compile("\\d{1,18}");
+
+	private final Pattern BAN_DATE_PATTERN = Pattern.compile("\\d{1,18}");
 
 	/** The locale pattern. */
 	private final Pattern LOCALE_PATTERN = Pattern.compile("en_US|ru_RU");
@@ -60,8 +63,8 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validLoginParameters(SessionRequestContent content){
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getLoginSet())
-				|| !requestedSessionNamesMiss(content, RequeredParametersContainer.getSessionUserSet())){
+		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getLoginSet())
+				|| !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet())){
 			return false;
 		}
 		boolean valid = true;
@@ -111,11 +114,11 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validUserRating(SessionRequestContent content){
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getUserRatingSet())
-				|| requestedSessionNamesMiss(content, RequeredParametersContainer.getSessionUserSet())){
+		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getUserRatingSet())
+				|| requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet())){
 			return false;
 		}
-		boolean valid = true;
+		boolean valid = false;
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String melody = requestParameters.get(ParameterName.MELODY_RATING.toString())[0];
 		String text = requestParameters.get(ParameterName.TEXT_RATING.toString())[0];
@@ -123,33 +126,33 @@ public class UserValidator {
 		String vocal = requestParameters.get(ParameterName.VOCAL_RATING.toString())[0];
 		String compositionId = requestParameters.get(ParameterName.ID.toString())[0];
 		Long userId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		if ( userId == null || invalidId(compositionId) || invalidRating(melody)
-				|| invalidRating(text) || invalidRating(music) || invalidRating(vocal)){
-			valid = false;
+		if ( userId != null && validId(compositionId) && validRating(melody)
+				&& validRating(text) && validRating(music) && validRating(vocal)){
+			valid = true;
 		}
 		return valid;
 	}
 
 	/**
-	 * Invalid rating.
+	 * Valid rating.
 	 *
 	 * @param rating the rating
 	 * @return true, if successful
 	 */
-	private boolean invalidRating(String rating) {
+	private boolean validRating(String rating) {
 		Matcher matcher = RATING_PATTERN.matcher(rating);
-		return (!matcher.matches());
+		return matcher.matches();
 	}
 
 	/**
-	 * Invalid id.
+	 * Valid id.
 	 *
 	 * @param id the id
 	 * @return true, if successful
 	 */
-	private boolean invalidId(String id) {
+	private boolean validId(String id) {
 		Matcher matcher = ID_PATTERN.matcher(id);
-		return (!matcher.matches());
+		return matcher.matches();
 	}
 
 	/**
@@ -162,23 +165,23 @@ public class UserValidator {
 		if (content == null){
 			return false;
 		}
-		boolean valid = true;
+		boolean valid = false;
 		String [] locales = content.getRequestParameters().get(ParameterName.LOCALE.toString());
-		if (locales == null || locales.length == 0 || invalidLocale(locales[0])){
-			valid = false;
+		if (locales != null && locales.length > 0 && validLocale(locales[0])){
+			valid = true;
 		}
 		return valid;
 	}
 
 	/**
-	 * Invalid locale.
+	 * Valid locale.
 	 *
 	 * @param locale the locale
 	 * @return true, if successful
 	 */
-	private boolean invalidLocale(String locale) {
+	private boolean validLocale(String locale) {
 		Matcher matcher = LOCALE_PATTERN.matcher(locale);
-		return (!matcher.matches());
+		return matcher.matches();
 	}
 
 	/**
@@ -188,18 +191,18 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validRegistrationParameters(SessionRequestContent content){
-		if (content == null || requestedParametersNamesMiss(content, RequeredParametersContainer.getRegistrationSet())){
+		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getRegistrationSet())){
 			return false;
 		}
-		boolean valid = true;
+		boolean valid = false;
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String login = requestParameters.get(ParameterName.USER_LOGIN.toString())[0];
 		String password = requestParameters.get(ParameterName.PASSWORD.toString())[0];
 		String email = requestParameters.get(ParameterName.USER_EMAIL.toString())[0];
-		boolean invalidEmail = invalidEmail(email);
-		if ( login.length() > LOGIN_LENGTH || password.length() > PASSWORD_LENGTH || invalidEmail){
+		boolean validEmail = validEmail(email);
+		if ( login.length() <= LOGIN_LENGTH && password.length() <= PASSWORD_LENGTH && validEmail){
 			valid = false;
-			if (invalidEmail){
+			if (!validEmail){
 				String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_EMAIL.toString());
 				content.getRequestAttributes().put(AttributeName.INVALID_EMAIL.toString(), emailFailure);
 			}
@@ -213,15 +216,16 @@ public class UserValidator {
 	 * @param email the email
 	 * @return true, if successful
 	 */
-	private boolean invalidEmail(String email) {
-		boolean invalid = false;
+	private boolean validEmail(String email) {
+		boolean valid = false;
 		try {
 			InternetAddress emailAddr = new InternetAddress(email);
 			emailAddr.validate();
+			valid = true;
 		} catch (AddressException e) {
-			invalid = true;
+
 		}
-		return invalid;
+		return valid;
 	}
 
 	/**
@@ -231,12 +235,12 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validNewEmail(SessionRequestContent content){
-		if (!validUser(content) || requestedParametersNamesMiss(content, RequeredParametersContainer.getNewEmailSet())){
+		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewEmailSet())){
 			return false;
 		}
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String newEmail = requestParameters.get(ParameterName.NEW_EMAIL.toString())[0];
-		boolean valid = !invalidEmail(newEmail);
+		boolean valid = validEmail(newEmail);
 		if (!valid){
 			String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_EMAIL.toString());
 			content.getRequestAttributes().put(AttributeName.INVALID_EMAIL.toString(), emailFailure);
@@ -251,7 +255,7 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validNewLogin(SessionRequestContent content){
-		if (!validUser(content) || requestedParametersNamesMiss(content, RequeredParametersContainer.getNewLoginSet())){
+		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewLoginSet())){
 			return false;
 		}
 		Map <String, String[]> requestParameters = content.getRequestParameters();
@@ -271,7 +275,7 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validNewPassword(SessionRequestContent content){
-		if (!validUser(content) || requestedParametersNamesMiss(content, RequeredParametersContainer.getNewPasswordSet())){
+		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewPasswordSet())){
 			return false;
 		}
 		Map <String, String[]> requestParameters = content.getRequestParameters();
@@ -291,7 +295,7 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validUser (SessionRequestContent content){
-		return (content != null && !requestedSessionNamesMiss(content, RequeredParametersContainer.getSessionUserSet()));
+		return (content != null && !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet()));
 	}
 
 	/**
@@ -310,6 +314,33 @@ public class UserValidator {
 			valid = true;
 		}
 		return valid;
+	}
+
+	public boolean validAdmin (SessionRequestContent content){
+		if (!validUser(content)){
+			return false;
+		}
+		String role = (String)content.getSessionAttributes().get(AttributeName.ROLE.toString());
+		return role.equals(Role.ADMIN.toString());
+	}
+
+	public boolean validUserBanDate (SessionRequestContent content){
+		if (!validAdmin(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getUserBanDateSet())){
+			return false;
+		}
+		Map <String, String[]> requestParameters = content.getRequestParameters();
+		String banDate = requestParameters.get(ParameterName.DATE.toString())[0];
+		String userId = requestParameters.get(ParameterName.ID.toString())[0];
+		boolean valid = false;
+		if (validBanDate(banDate) && validId(userId)){
+			valid = true;
+		}
+		return valid;
+	}
+
+	private boolean validBanDate(String banDate) {
+		Matcher matcher = BAN_DATE_PATTERN.matcher(banDate);
+		return matcher.matches();
 	}
 
 }

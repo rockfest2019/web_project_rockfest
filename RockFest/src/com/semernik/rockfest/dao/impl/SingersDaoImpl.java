@@ -144,33 +144,6 @@ public class SingersDaoImpl implements SingersDao {
 		return Optional.ofNullable(singer);
 	}
 
-	private enum Query {
-
-		FIND_ALL_SINGERS ("SELECT singerId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Singers;"),
-		FIND_SINGER_BY_ID("SELECT title, description, addingDate, authorId, editorId, "
-				+ "(SELECT login FROM Users WHERE userId=authorId) AS author, "
-				+ "(SELECT login FROM Users WHERE userId=editorId) AS editor, melodyRating, "
-				+ "textRating, musicRating, vocalRating, votedUsersCount FROM Singers JOIN "
-				+ "singers_has_descriptionEditors USING(singerId) WHERE singers.singerId=?;"),
-		SAVE_SINGER("INSERT INTO Singers (singerId, title, description, "
-				+ "addingDate, authorId) VALUES (?,?,?,?,?);"),
-		SAVE_DESCRIPTION_EDITOR ("INSERT INTO Singers_has_DescriptionEditors VALUES (?,?)"),
-		UPDATE_SINGER_DESCRIPTION("UPDATE Singers SET description=? WHERE singerId=?;"),
-		UPDATE_DESCRIPTION_EDITOR("UPDATE Singers_has_DescriptionEditors SET editorId=? WHERE singerId=?;")
-		;
-
-		private String query;
-
-		Query (String query){
-			this.query = query;
-		}
-
-		@Override
-		public String toString(){
-			return query;
-		}
-	}
-
 	@Override
 	public boolean updateSingerDescription(long singerId, String description, long authorId) throws DaoException {
 		Connection con = null;
@@ -211,6 +184,60 @@ public class SingersDaoImpl implements SingersDao {
 		}
 		return updated;
 	}
+
+	@Override
+	public boolean changeSingerTitle(long singerId, String newTitle) throws DaoException {
+		Connection con = null;
+		boolean changed = false;
+		PreparedStatement st = null;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.UPDATE_SINGER_TITLE.toString());
+			st.setString(1, newTitle);
+			st.setLong(2, singerId);
+			int affectedRows = st.executeUpdate();
+			if (affectedRows>0){
+				changed = true;
+			}
+		} catch (SQLException e) {
+			changed = false;
+			throw new DaoException("Fail to change singer title", e);
+		} finally {
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return changed;
+	}
+
+	private enum Query {
+
+		FIND_ALL_SINGERS ("SELECT singerId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Singers;"),
+		FIND_SINGER_BY_ID("SELECT title, description, addingDate, authorId, editorId, "
+				+ "(SELECT login FROM Users WHERE userId=authorId) AS author, "
+				+ "(SELECT login FROM Users WHERE userId=editorId) AS editor, melodyRating, "
+				+ "textRating, musicRating, vocalRating, votedUsersCount FROM Singers JOIN "
+				+ "singers_has_descriptionEditors USING(singerId) WHERE singers.singerId=?;"),
+		SAVE_SINGER("INSERT INTO Singers (singerId, title, description, "
+				+ "addingDate, authorId) VALUES (?,?,?,?,?);"),
+		SAVE_DESCRIPTION_EDITOR ("INSERT INTO Singers_has_DescriptionEditors VALUES (?,?)"),
+		UPDATE_SINGER_DESCRIPTION("UPDATE Singers SET description=? WHERE singerId=?;"),
+		UPDATE_DESCRIPTION_EDITOR("UPDATE Singers_has_DescriptionEditors SET editorId=? WHERE singerId=?;"),
+		UPDATE_SINGER_TITLE("UPDATE Singers SET title=? WHERE singerId=?;")
+		;
+
+		private String query;
+
+		Query (String query){
+			this.query = query;
+		}
+
+		@Override
+		public String toString(){
+			return query;
+		}
+	}
+
+
 
 
 

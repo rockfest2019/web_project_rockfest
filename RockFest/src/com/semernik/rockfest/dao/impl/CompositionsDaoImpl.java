@@ -361,6 +361,30 @@ public class CompositionsDaoImpl implements CompositionsDao{
 		return changed;
 	}
 
+	@Override
+	public boolean changeCompositionTitle(long compositionId, String newTitle) throws DaoException {
+		Connection con = null;
+		boolean changed = false;
+		PreparedStatement st = null;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.UPDATE_COMPOSITION_TITLE.toString());
+			st.setString(1, newTitle);
+			st.setLong(2, compositionId);
+			int affectedRows = st.executeUpdate();
+			if (affectedRows>0){
+				changed = true;
+			}
+		} catch (SQLException e) {
+			changed = false;
+			throw new DaoException("Fail to change composition title", e);
+		} finally {
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return changed;
+	}
+
 
 
 	private enum Query {
@@ -392,6 +416,7 @@ public class CompositionsDaoImpl implements CompositionsDao{
 		SAVE_GENRE_EDITOR ("INSERT INTO Compositions_has_GenresEditor(compositionId, genreEditorId) VALUES (?,?);"),
 		UPDATE_GENRE_EDITOR ("UPDATE Compositions_has_GenresEditor SET genreEditorId=? WHERE compositionId=?;"),
 		SAVE_COMPOSITION_GENRE("INSERT INTO Compositions_has_Genres(compositionId, genreId) VALUES (?,?);"),
+		UPDATE_COMPOSITION_TITLE("UPDATE Compositions SET title=? WHERE compositionId=?;"),
 		DELETE_COMPOSITION_GENRES ("DELETE FROM Compositions_has_Genres WHERE compositionId=?;")
 		;
 

@@ -1,5 +1,8 @@
 package com.semernik.rockfest.service;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,6 +51,9 @@ public class UserService {
 
 	/** The Constant PASSWORD_CHANGED. */
 	private static final String PASSWORD_CHANGED = "password was changed";
+
+	private static final String BAN_DATE_SAVING_FAILURE = "ban date was not saved";
+	private static final String USER_BAN = "user is banned until ";
 
 
 	/**
@@ -119,7 +125,12 @@ public class UserService {
 		String password = requestParameters.get(ParameterName.PASSWORD.toString())[0];
 		String loginFailureDescription;
 		if (optional.isPresent() && validPassword(password, optional.get())){
-			confirmed = true;
+			User user = optional.get();
+			confirmed = userIsNotBanned(user);
+			if (!confirmed){
+				loginFailureDescription = USER_BAN + new Date(user.getBanExpirationDate());
+				content.getRequestAttributes().put(AttributeName.LOGIN_FAILURE.toString(), loginFailureDescription);
+			}
 		} else if (optional.isPresent()){
 			loginFailureDescription = ErrorMessagesContainer.findMessage(INVALID_PASSWORD);
 			content.getRequestAttributes().put(AttributeName.LOGIN_FAILURE.toString(), loginFailureDescription);
@@ -128,6 +139,12 @@ public class UserService {
 			content.getRequestAttributes().put(AttributeName.LOGIN_FAILURE.toString(), loginFailureDescription);
 		}
 		return confirmed;
+	}
+
+	private boolean userIsNotBanned(User user) {
+		long currentDate = System.currentTimeMillis();
+		long banExpirationDate = user.getBanExpirationDate();
+		return (currentDate > banExpirationDate);
 	}
 
 	/**
@@ -509,6 +526,37 @@ public class UserService {
 			}
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
+		}
+		return found;
+	}
+
+	public boolean saveUserBanExpirationDate(SessionRequestContent content) {
+		Map<String, String[]> parameters = content.getRequestParameters();
+		long userId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		long banExpirationDate = Long.parseLong(parameters.get(ParameterName.DATE.toString())[0]);
+		UsersDao dao = DaoFactory.getUsersDao();
+		boolean saved = false;
+		try {
+			saved = dao.saveBanExpirationDate(userId, banExpirationDate);
+		} catch (DaoException e) {
+			content.getRequestAttributes().put(AttributeName.ERROR_MESSAGE.toString(), BAN_DATE_SAVING_FAILURE);
+			logger.error("Data access error", e);
+		}
+		return saved;
+	}
+
+	public boolean findAdminInfo(SessionRequestContent content){
+		Collection<User> users = new LinkedList<>();
+		UsersDao dao = DaoFactory.getUsersDao();
+		boolean found = false;
+		try {
+			users = dao.findAllUsers();
+			found = true;
+			content.getRequestAttributes().put(AttributeName.USERS.toString(), users);
+			long date = System.currentTimeMillis();
+			content.getRequestAttributes().put(AttributeName.DATE.toString(), date);
+		} catch (DaoException e) {
+			logger.error("Data access error", e);
 		}
 		return found;
 	}

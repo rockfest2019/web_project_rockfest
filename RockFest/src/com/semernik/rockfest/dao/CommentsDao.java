@@ -22,6 +22,24 @@ public interface CommentsDao extends Dao{
 	Collection <Comment> findCompositionCommentsByCompositionId(long compositionId) throws DaoException;
 
 	/**
+	 * Find singer comments by singer id.
+	 *
+	 * @param singerId the singer id
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
+	Collection <Comment> findSingerCommentsBySingerId(long singerId) throws DaoException;
+
+	/**
+	 * Find genre comments by genre id.
+	 *
+	 * @param genreId the genre id
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
+	Collection <Comment> findGenreCommentsByGenreId(long genreId) throws DaoException;
+
+	/**
 	 * Save composition comment.
 	 *
 	 * @param comment the comment
@@ -47,5 +65,11 @@ public interface CommentsDao extends Dao{
 	 * @throws DaoException the dao exception
 	 */
 	boolean saveGenreComment (Comment comment) throws DaoException;
+
+	boolean deleteCompositionComment(long commentId) throws DaoException;
+
+	boolean deleteSingerComment(long commentId) throws DaoException;
+
+	boolean deleteGenreComment(long commentId) throws DaoException;
 
 }

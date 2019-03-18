@@ -59,4 +59,6 @@ public interface GenresDao extends Dao {
 	 */
 	Optional<Genre> findGenreById(long genreId) throws DaoException;
 
+	boolean changeGenreTitle(long genreId, String newTitle) throws DaoException;
+
 }

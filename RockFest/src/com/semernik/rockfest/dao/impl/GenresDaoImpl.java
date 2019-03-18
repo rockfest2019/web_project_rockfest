@@ -213,6 +213,30 @@ public class GenresDaoImpl implements GenresDao {
 		return updated;
 	}
 
+	@Override
+	public boolean changeGenreTitle(long genreId, String newTitle) throws DaoException {
+		Connection con = null;
+		boolean changed = false;
+		PreparedStatement st = null;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.UPDATE_GENRE_TITLE.toString());
+			st.setString(1, newTitle);
+			st.setLong(2, genreId);
+			int affectedRows = st.executeUpdate();
+			if (affectedRows>0){
+				changed = true;
+			}
+		} catch (SQLException e) {
+			changed = false;
+			throw new DaoException("Fail to change genre title", e);
+		} finally {
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return changed;
+	}
+
 	private enum Query {
 
 		FIND_COMPOSITION_GENRES ("SELECT genreId, title FROM Genres JOIN compositions_has_genres "
@@ -227,7 +251,8 @@ public class GenresDaoImpl implements GenresDao {
 				+ "addingDate, authorId) VALUES (?,?,?,?,?);"),
 		SAVE_DESCRIPTION_EDITOR ("INSERT INTO Genres_has_DescriptionEditors VALUES (?,?)"),
 		UPDATE_GENRE_DESCRIPTION("UPDATE Genres SET description=? WHERE genreId=?;"),
-		UPDATE_DESCRIPTION_EDITOR("UPDATE Genres_has_DescriptionEditors SET editorId=? WHERE genreId=?;")
+		UPDATE_DESCRIPTION_EDITOR("UPDATE Genres_has_DescriptionEditors SET editorId=? WHERE genreId=?;"),
+		UPDATE_GENRE_TITLE("UPDATE Genres SET title=? WHERE genreId=?;")
 		;
 
 		private String query;
@@ -240,8 +265,8 @@ public class GenresDaoImpl implements GenresDao {
 		public String toString(){
 			return query;
 		}
-	}
 
+	}
 
 
 }
