@@ -1,0 +1,28 @@
+
+	.searchFeature{
+		display: none;
+	}
+	.forgotPasswordForm{
+		display: none;
+	}
+	.searchForm{
+		display: inline-block;
+	}
+	.extendedSearch{
+		display: inline-block;
+	}
+	.registrationLink{
+		display: inline-block;
+	}
+	.loginForm{
+		display: inline-block;
+	}
+	.forgotPasswordButton{
+		display: inline-block;
+	}
+	.profileLink{
+		display: inline-block;
+	}
+	.logout{
+		display: inline-block;
+	}

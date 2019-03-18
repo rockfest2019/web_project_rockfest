@@ -1,0 +1,10 @@
+.rating{
+	display: inline-block;
+	background: #999;
+}
+.ratings{
+	display: none;
+}
+.hideRatings{
+	display: none;
+}
