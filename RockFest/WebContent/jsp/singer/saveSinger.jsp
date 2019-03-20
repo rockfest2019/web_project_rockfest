@@ -14,6 +14,8 @@
 	<header><fmt:message key="new_singer"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
+		<c:set var="save_singer_error" value="${current_page_attributes['save_singer_error'] }"></c:set>
+		<section class="error_message"><c:out value="${save_singer_error }"></c:out></section>
 		<form action="${pageContext.request.contextPath }/RockFest" method="post">
 		<input name="command" value="save_singer" hidden>
 			<input name="authorId" value="1" hidden>

@@ -12,8 +12,9 @@ import java.util.stream.Collectors;
 
 import com.semernik.rockfest.container.RequiredParametersContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
-import com.semernik.rockfest.type.AttributeName;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
+import com.semernik.rockfest.util.ErrorUtil;
 
 
 // TODO: Auto-generated Javadoc
@@ -22,44 +23,20 @@ import com.semernik.rockfest.type.ParameterName;
  */
 public class GeneralValidator {
 
-	/** The instance. */
+
 	private static GeneralValidator instance;
-
-	/** The description length. */
 	private final int DESCRIPTION_LENGTH = 65535;
-
-	/** The title length. */
 	private final int TITLE_LENGTH = 100;
-
-	/** The comment content length. */
 	private final int COMMENT_CONTENT_LENGTH = 200;
-
-	/** The id pattern. */
 	private final Pattern ID_PATTERN = Pattern.compile("\\d{1,18}");
-
-	/** The position pattern. */
 	private final Pattern POSITION_PATTERN = Pattern.compile("\\d{1,9}");
-
-	/** The elements count pattern. */
 	private final Pattern ELEMENTS_COUNT_PATTERN = Pattern.compile("\\d{1,9}");
-
-	/** The year pattern. */
 	private final Pattern YEAR_PATTERN = Pattern.compile("[12][90]\\d\\d");
-
-	/** The rating type pattern. */
 	private final Pattern RATING_TYPE_PATTERN = Pattern.compile("general|melody|text|music|vocal");
-
-	/** The search pattern. */
 	private final Pattern SEARCH_PATTERN = Pattern.compile("(\\p{Alnum}|\\p{Blank}|[а-яА-Я0-9]|[,.!?-]){1,100}");
 
-	/** The invalid parameters. */
-	private final String INVALID_PARAMETERS = "invalid parameters";
 
-	/**
-	 * Gets the single instance of GeneralValidator.
-	 *
-	 * @return single instance of GeneralValidator
-	 */
+
 	public static GeneralValidator getInstance() {
 		if (instance == null){
 			instance = new GeneralValidator();
@@ -74,7 +51,14 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	public boolean validSinger (SessionRequestContent content){
-		return validGenreOrSinger(content);
+		boolean valid = false;
+		if(validGenreOrSinger(content)){
+			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_SINGER, ErrorMessage.INVALID_PARAMETERS, content);
+		}
+		return valid;
 	}
 
 	/**
@@ -84,9 +68,15 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	public boolean validGenre (SessionRequestContent content){
-		return validGenreOrSinger(content);
+		boolean valid = false;
+		if(validGenreOrSinger(content)){
+			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_GENRE, ErrorMessage.INVALID_PARAMETERS, content);
+		}
+		return valid;
 	}
-
 
 	/**
 	 * Valid genre or singer.
@@ -154,6 +144,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (title.length() <= TITLE_LENGTH && validYearDescription(year) && validId(singerId)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMPOSITION, ErrorMessage.INVALID_PARAMETERS, content);
 		}
 		return valid;
 	}
@@ -201,6 +194,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (idsArray != null && validId(idsArray[0])){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_ID.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_ID, content);
 		}
 		return valid;
 	}
@@ -222,6 +218,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (commentContent.length() <= COMMENT_CONTENT_LENGTH && validId(id)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_COMMENT.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMMENT, content);
 		}
 		return valid;
 	}
@@ -243,6 +242,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (validId(compositionId) && validUrl(linkUrl)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_LINK.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LINK, content);
 		}
 		return valid;
 	}
@@ -275,8 +277,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (ratingTypes != null && validRatingType(ratingTypes[0])){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.RATING_FAILURE.toString());
 		} else {
-			content.getSessionAttributes().put(AttributeName.RATING_FAILURE.toString(), AttributeName.RATING_FAILURE.toString());
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
 		return valid;
 	}
@@ -308,6 +311,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (ratingTypes != null && validRatingType(ratingTypes[0])){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.RATING_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
 		return valid;
 	}
@@ -320,7 +326,7 @@ public class GeneralValidator {
 	 */
 	public boolean validAjaxRatingType(SessionRequestContent content){
 		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getAjaxRatingSet())){
-			content.setAjaxResponse(INVALID_PARAMETERS);
+			content.setAjaxResponse(ErrorMessage.RATING_FAILURE.findMessage());
 			return false;
 		}
 		Map <String, String[]> parameters = content.getRequestParameters();
@@ -331,7 +337,7 @@ public class GeneralValidator {
 		if (validRatingType(ratingType) && validPosition(position) && validElementsCountn(elementsCount)){
 			valid = true;
 		} else {
-			content.setAjaxResponse(INVALID_PARAMETERS);
+			content.setAjaxResponse(ErrorMessage.RATING_FAILURE.findMessage());
 		}
 		return valid;
 	}
@@ -372,8 +378,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (searchPatterns != null && validSearchPattern(searchPatterns[0])){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_SEARCH_PATTERN.toString());
 		} else {
-			content.getRequestAttributes().put(AttributeName.ERROR_MESSAGE.toString(), INVALID_PARAMETERS);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_SEARCH_PATTERN, content);
 		}
 		return valid;
 	}
@@ -406,6 +413,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (description.length() <= DESCRIPTION_LENGTH && validId(entityId)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_DESCRIPTION_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_DESCRIPTION, ErrorMessage.UPDATE_DESCRIPTION_ERROR, content);
 		}
 		return valid;
 	}
@@ -425,6 +435,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (compositionIds != null && validId(compositionIds[0]) && genresIdsAreValid(content)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.GENRE_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMPOSITION_GENRES, ErrorMessage.GENRE_ERROR, content);
 		}
 		return valid;
 	}
@@ -446,6 +459,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (validId(id) && validYearDescription(year)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_YEAR_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_YEAR, ErrorMessage.UPDATE_YEAR_ERROR, content);
 		}
 		return valid;
 	}
@@ -461,16 +477,33 @@ public class GeneralValidator {
 		boolean valid = false;
 		if (title.length() <= TITLE_LENGTH && validId(id)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_TITLE_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_TITlE, ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		return valid;
 	}
 
 	public boolean validCommentDeletion(SessionRequestContent content){
-		return validIdAndAdmin(content);
+		boolean valid = false;
+		if(validIdAndAdmin(content)){
+			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.DELETE_COMMENT_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMMENT_DELETION, ErrorMessage.DELETE_COMMENT_ERROR, content);
+		}
+		return valid;
 	}
 
 	public boolean validCompositionLinkDeletion(SessionRequestContent content){
-		return validIdAndAdmin(content);
+		boolean valid = false;
+		if(validIdAndAdmin(content)){
+			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.DELETE_LINK_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LINK_DELETION, ErrorMessage.DELETE_LINK_ERROR, content);
+		}
+		return valid;
 	}
 
 	private boolean validIdAndAdmin(SessionRequestContent content) {

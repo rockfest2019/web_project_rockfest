@@ -9,12 +9,13 @@ import java.util.stream.Collectors;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
-import com.semernik.rockfest.container.ErrorMessagesContainer;
 import com.semernik.rockfest.container.RequiredParametersContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.type.AttributeName;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
 import com.semernik.rockfest.type.Role;
+import com.semernik.rockfest.util.ErrorUtil;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -22,24 +23,14 @@ import com.semernik.rockfest.type.Role;
  */
 public class UserValidator {
 
-	/** The instance. */
+
 	private static UserValidator instance = new UserValidator();
 
-	/** The login length. */
 	private final int LOGIN_LENGTH = 45;
-
-	/** The password length. */
 	private final int PASSWORD_LENGTH = 20;
-
-	/** The rating pattern. */
 	private final Pattern RATING_PATTERN = Pattern.compile("\\d|10");
-
-	/** The id pattern. */
 	private final Pattern ID_PATTERN = Pattern.compile("\\d{1,18}");
-
 	private final Pattern BAN_DATE_PATTERN = Pattern.compile("\\d{1,18}");
-
-	/** The locale pattern. */
 	private final Pattern LOCALE_PATTERN = Pattern.compile("en_US|ru_RU");
 
 	/**
@@ -73,6 +64,9 @@ public class UserValidator {
 		String password = requestParameters.get(ParameterName.PASSWORD.toString())[0];
 		if ( login.length() > LOGIN_LENGTH || password.length() > PASSWORD_LENGTH){
 			valid = false;
+			content.getCurrentPageAttributes().remove(ErrorMessage.LOGIN_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOGIN_PARAMETERS, ErrorMessage.LOGIN_FAILURE, content);
 		}
 		return valid;
 	}
@@ -129,6 +123,9 @@ public class UserValidator {
 		if ( userId != null && validId(compositionId) && validRating(melody)
 				&& validRating(text) && validRating(music) && validRating(vocal)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_USER_RATING.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_USER_RATING, content);
 		}
 		return valid;
 	}
@@ -169,6 +166,9 @@ public class UserValidator {
 		String [] locales = content.getRequestParameters().get(ParameterName.LOCALE.toString());
 		if (locales != null && locales.length > 0 && validLocale(locales[0])){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_LOCALE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOCALE, content);
 		}
 		return valid;
 	}
@@ -201,10 +201,14 @@ public class UserValidator {
 		String email = requestParameters.get(ParameterName.USER_EMAIL.toString())[0];
 		boolean validEmail = validEmail(email);
 		if ( login.length() <= LOGIN_LENGTH && password.length() <= PASSWORD_LENGTH && validEmail){
-			valid = false;
+			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_EMAIL.toString());
+			content.getCurrentPageAttributes().remove(ErrorMessage.REGISTRATION_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_REGISTRATION_PARAMETERS, ErrorMessage.REGISTRATION_FAILURE,
+					content);
 			if (!validEmail){
-				String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_EMAIL.toString());
-				content.getRequestAttributes().put(AttributeName.INVALID_EMAIL.toString(), emailFailure);
+				ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_EMAIL, content);
 			}
 		}
 		return valid;
@@ -241,9 +245,10 @@ public class UserValidator {
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String newEmail = requestParameters.get(ParameterName.NEW_EMAIL.toString())[0];
 		boolean valid = validEmail(newEmail);
-		if (!valid){
-			String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_EMAIL.toString());
-			content.getRequestAttributes().put(AttributeName.INVALID_EMAIL.toString(), emailFailure);
+		if (valid){
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_EMAIL.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_EMAIL, content);
 		}
 		return valid;
 	}
@@ -261,9 +266,10 @@ public class UserValidator {
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String newLogin = requestParameters.get(ParameterName.NEW_LOGIN.toString())[0];
 		boolean valid = newLogin.length() <= LOGIN_LENGTH;
-		if (!valid){
-			String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_NEW_LOGIN.toString());
-			content.getRequestAttributes().put(AttributeName.INVALID_NEW_LOGIN.toString(), emailFailure);
+		if (valid){
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_NEW_LOGIN.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_LOGIN, content);
 		}
 		return valid;
 	}
@@ -281,9 +287,10 @@ public class UserValidator {
 		Map <String, String[]> requestParameters = content.getRequestParameters();
 		String newPassword = requestParameters.get(ParameterName.NEW_PASSWORD.toString())[0];
 		boolean valid = newPassword.length() <= PASSWORD_LENGTH;
-		if (!valid){
-			String emailFailure = ErrorMessagesContainer.findMessage(AttributeName.INVALID_NEW_PASSWORD.toString());
-			content.getRequestAttributes().put(AttributeName.INVALID_NEW_PASSWORD.toString(), emailFailure);
+		if (valid){
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_NEW_PASSWORD.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_PASSWORD, content);
 		}
 		return valid;
 	}
@@ -295,7 +302,13 @@ public class UserValidator {
 	 * @return true, if successful
 	 */
 	public boolean validUser (SessionRequestContent content){
-		return (content != null && !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet()));
+		boolean valid =  (content != null && !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet()));
+		if (valid){
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_USER.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_USER, content);
+		}
+		return valid;
 	}
 
 	/**
@@ -312,6 +325,9 @@ public class UserValidator {
 		boolean valid = false;
 		if (loginArray != null && loginArray[0].length() <= LOGIN_LENGTH){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_LOGIN.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOGIN, content);
 		}
 		return valid;
 	}
@@ -321,7 +337,13 @@ public class UserValidator {
 			return false;
 		}
 		String role = (String)content.getSessionAttributes().get(AttributeName.ROLE.toString());
-		return role.equals(Role.ADMIN.toString());
+		boolean valid =  role.equals(Role.ADMIN.toString());
+		if (valid){
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_ADMIN.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_ADMIN, content);
+		}
+		return valid;
 	}
 
 	public boolean validUserBanDate (SessionRequestContent content){
@@ -334,6 +356,9 @@ public class UserValidator {
 		boolean valid = false;
 		if (validBanDate(banDate) && validId(userId)){
 			valid = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_DATE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_DATE, content);
 		}
 		return valid;
 	}

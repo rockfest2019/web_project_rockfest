@@ -2,12 +2,15 @@ package com.semernik.rockfest.util;
 
 import java.util.List;
 
+import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.dao.DaoException;
 import com.semernik.rockfest.dao.DaoFactory;
 import com.semernik.rockfest.dao.RatingDao;
 import com.semernik.rockfest.entity.EntityRating;
+import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.CommandType;
 import com.semernik.rockfest.type.EntityType;
+import com.semernik.rockfest.type.ParameterName;
 
 
 // TODO: Auto-generated Javadoc
@@ -16,25 +19,14 @@ import com.semernik.rockfest.type.EntityType;
  */
 public class RatingUtil {
 
-	/** The instance. */
 	private static RatingUtil instance = new RatingUtil();
 
-	/** The rating dao. */
 	private static RatingDao ratingDao = DaoFactory.getRatingDao();
 
-	/** The Constant DELIMITER. */
 	private final static String DELIMITER = "_";
 
-	/**
-	 * Instantiates a new rating util.
-	 */
 	private RatingUtil() {}
 
-	/**
-	 * Gets the single instance of RatingUtil.
-	 *
-	 * @return single instance of RatingUtil
-	 */
 	public static RatingUtil getInstance() {
 		return instance;
 	}
@@ -130,53 +122,23 @@ public class RatingUtil {
 	 */
 	private static enum RatingDaoMehtod implements RatingsDaoMethod {
 
-		/** The composition general. */
 		COMPOSITION_GENERAL(ratingDao::findCompositionsRatingPartOrderedByGeneralRating),
-
-		/** The composition melody. */
 		COMPOSITION_MELODY(ratingDao::findCompositionsRatingPartOrderedByMelodyRating),
-
-		/** The composition text. */
 		COMPOSITION_TEXT(ratingDao::findCompositionsRatingPartOrderedByTextRating),
-
-		/** The composition music. */
 		COMPOSITION_MUSIC(ratingDao::findCompositionsRatingPartOrderedByMusicRating),
-
-		/** The composition vocal. */
 		COMPOSITION_VOCAL(ratingDao::findCompositionsRatingPartOrderedByVocalRating),
-
-		/** The singer general. */
 		SINGER_GENERAL(ratingDao::findSingersRatingPartOrderedByGeneralRating),
-
-		/** The singer melody. */
 		SINGER_MELODY(ratingDao::findSingersRatingPartOrderedByMelodyRating),
-
-		/** The singer text. */
 		SINGER_TEXT(ratingDao::findSingersRatingPartOrderedByTextRating),
-
-		/** The singer music. */
 		SINGER_MUSIC(ratingDao::findSingersRatingPartOrderedByMusicRating),
-
-		/** The singer vocal. */
 		SINGER_VOCAL(ratingDao::findSingersRatingPartOrderedByVocalRating),
-
-		/** The genre general. */
 		GENRE_GENERAL(ratingDao::findGenresRatingPartOrderedByGeneralRating),
-
-		/** The genre melody. */
 		GENRE_MELODY(ratingDao::findGenresRatingPartOrderedByMelodyRating),
-
-		/** The genre text. */
 		GENRE_TEXT(ratingDao::findGenresRatingPartOrderedByTextRating),
-
-		/** The genre music. */
 		GENRE_MUSIC(ratingDao::findGenresRatingPartOrderedByMusicRating),
-
-		/** The genre vocal. */
 		GENRE_VOCAL(ratingDao::findGenresRatingPartOrderedByVocalRating),
 		;
 
-		/** The dao method. */
 		private RatingsDaoMethod daoMethod;
 
 
@@ -215,23 +177,13 @@ public class RatingUtil {
 	 */
 	private static enum UserRatingDaoMehtod implements UserRatingsDaoMethod {
 
-		/** The composition general. */
 		COMPOSITION_GENERAL(ratingDao::findCompositionsUserRatingPartOrderedByGeneralRating),
-
-		/** The composition melody. */
 		COMPOSITION_MELODY(ratingDao::findCompositionsUserRatingPartOrderedByMelodyRating),
-
-		/** The composition text. */
 		COMPOSITION_TEXT(ratingDao::findCompositionsUserRatingPartOrderedByTextRating),
-
-		/** The composition music. */
 		COMPOSITION_MUSIC(ratingDao::findCompositionsUserRatingPartOrderedByMusicRating),
-
-		/** The composition vocal. */
 		COMPOSITION_VOCAL(ratingDao::findCompositionsUserRatingPartOrderedByVocalRating),
 		;
 
-		/** The dao method. */
 		private UserRatingsDaoMethod daoMethod;
 
 
@@ -244,13 +196,22 @@ public class RatingUtil {
 			this.daoMethod = daoMethod;
 		}
 
-		/* (non-Javadoc)
-		 * @see com.semernik.rockFest.util.UserRatingsDaoMethod#apply(long, int, int)
-		 */
+
 		@Override
 		public List<EntityRating> apply(long userId, int positionFrom, int elementsCount) throws DaoException {
 			return daoMethod.apply(userId, positionFrom, elementsCount);
 		}
+	}
+
+	public EntityRating getUserRatingFromContent(SessionRequestContent content) {
+		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		Long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
+		int melodyRating = Integer.parseInt(content.getParameter(ParameterName.MELODY_RATING.toString()));
+		int textRating = Integer.parseInt(content.getParameter(ParameterName.TEXT_RATING.toString()));
+		int musicRating = Integer.parseInt(content.getParameter(ParameterName.MUSIC_RATING.toString()));
+		int vocalRating = Integer.parseInt(content.getParameter(ParameterName.VOCAL_RATING.toString()));
+		EntityRating rating = new EntityRating(userId, compositionId, melodyRating, textRating, musicRating, vocalRating);
+		return rating;
 	}
 
 }

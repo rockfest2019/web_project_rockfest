@@ -20,12 +20,22 @@
 	<header><fmt:message key="composition"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
+		<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
 		<c:set var="composition" value="${current_page_attributes['composition'] }"></c:set>
 		<c:set var="user_rating" value="${current_page_attributes['user_rating'] }"></c:set>
 		<c:set var="comments" value="${current_page_attributes['comments'] }"></c:set>
 		<c:set var="links" value="${current_page_attributes['links'] }"></c:set>
 		<c:set var="genre_error" value="${current_page_attributes['genre_error'] }"></c:set>
+		<c:set var="composition_genre_error" value="${current_page_attributes['composition_genre_error'] }"></c:set>
+		<c:set var="rating_failure" value="${current_page_attributes['rating_failure'] }"></c:set>
+		<c:set var="composition_error" value="${current_page_attributes['composition_error'] }"></c:set>
+		<c:set var="link_error" value="${current_page_attributes['link_error'] }"></c:set>
+		<c:set var="update_title_error" value="${current_page_attributes['update_title_error'] }"></c:set>
+		<c:set var="comments_failure" value="${current_page_attributes['comments_failure'] }"></c:set>
+		<c:set var="update_year_error" value="${current_page_attributes['update_year_error'] }"></c:set>
 		<h1><fmt:message key="composition"/></h1>
+			<section class="error_message"><c:out value="${error_message }"></c:out></section>
+			<section class="error_message"><c:out value="${composition_error }"></c:out></section>
 				<section>
 					<b><fmt:message key="title"/></b><h2><c:out value="${composition.title }"></c:out></h2>
 					<c:if test="${role eq 'admin' }">
@@ -38,6 +48,7 @@
 							<input type="submit" value="change title">
 						</form>
 					</c:if>
+					<section class="error_message"><c:out value="${update_title_error }"></c:out></section>
 				</section>
 				<section><b><fmt:message key="singer"/></b>
 					<form action="${pageContext.request.contextPath }/RockFest">
@@ -60,6 +71,8 @@
 
 						</section>
 					</c:if>
+					<section class="error_message"><c:out value="${genre_error }"></c:out></section>
+					<section class="error_message"><c:out value="${composition_genre_error }"></c:out></section>
 				</section>
 				<section><b><fmt:message key="year"/></b>
 					<h2><c:out value="${fn:substring(composition.year, 0, 4)}"></c:out></h2>
@@ -82,6 +95,7 @@
 						</form>
 					</c:if>
 				</section>
+				<section class="error_message"><c:out value="${update_year_error }"></c:out></section>
 				<section>
 					<b><fmt:message key="links"/></b>
 					<c:forEach var="link" items="${links }" varStatus="Status">
@@ -110,6 +124,7 @@
 							</form>
 						</c:if>
 					</section>
+					<section class="error_message"><c:out value="${link_error }"></c:out></section>
 				</section>
 				<section>
 				<c:if test="${ composition.votedUsersCount == 0}">
@@ -154,6 +169,7 @@
 						<section><h2><b><fmt:message key="voted_users_count"/></b><c:out value=" ${composition.votedUsersCount }"></c:out></h2></section>
 					</section>
 					</c:if>
+					<section class="error_message"><c:out value="${rating_failure }"></c:out></section>
 					<section>
 						<c:if test="${not empty user_id}">
 							<h3><c:out value="${rating_failure}"></c:out></h3>
@@ -227,6 +243,7 @@
 						</section>
 					</c:forEach>
 				</section>
+				<section class="error_message"><c:out value="${comments_failure }"></c:out></section>
 				<c:if test="${not empty user_id }">
 					Your comment:<br>
 					<form action="${pageContext.request.contextPath }/RockFest" method="post">

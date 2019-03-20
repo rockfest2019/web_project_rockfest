@@ -16,6 +16,8 @@
 	<main>
 		<c:set var="singers" value="${current_page_attributes['singers'] }"></c:set>
 		<c:set var="genres" value="${current_page_attributes['genres'] }"></c:set>
+		<c:set var="save_composition_error" value="${current_page_attributes['save_composition_error'] }"></c:set>
+		<section class="error_message"><c:out value="${save_composition_error }"></c:out></section>
 		<form action="${pageContext.request.contextPath }/RockFest" method="post">
 		<input name="command" value="save_composition" hidden>
 			<p><b><fmt:message key="title"/></b></p>

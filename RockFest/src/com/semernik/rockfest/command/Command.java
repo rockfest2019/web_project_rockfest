@@ -3,7 +3,7 @@ package com.semernik.rockfest.command;
 import com.semernik.rockfest.container.ErrorMessagesContainer;
 import com.semernik.rockfest.container.PagesNamesContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
-import com.semernik.rockfest.type.AttributeName;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.PageType;
 import com.semernik.rockfest.type.SendingMethod;
 import com.semernik.rockfest.validator.Validator;
@@ -14,28 +14,13 @@ import com.semernik.rockfest.validator.Validator;
  */
 public class Command {
 
-	/** The validator. */
 	private Validator validator;
-
-	/** The invoker. */
 	private LogicInvoker invoker;
-
-	/** The result page type. */
 	private PageType resultPageType;
-
-	/** The method. */
 	private SendingMethod method;
-
-	/** The Constant INVALID_PARAMETERS. */
 	private final static String INVALID_PARAMETERS = "invalidParameters";
-
-	/** The Constant OK. */
 	private final static String OK = "ok";
-
-	/** The Constant ERROR. */
 	private final static String ERROR = "error";
-
-	/** The Constant DELIMITER. */
 	private final static String DELIMITER = "_";
 
 
@@ -132,7 +117,7 @@ public class Command {
 			suffix = OK;
 		} else {
 			String errorMessage = ErrorMessagesContainer.findMessage(preffix);
-			content.getRequestAttributes().put(AttributeName.ERROR_MESSAGE.toString(), errorMessage);
+			content.getRequestAttributes().put(ErrorMessage.ERROR_MESSAGE.toString(), errorMessage);
 			suffix = ERROR;
 		}
 		System.out.println(preffix + DELIMITER + suffix);
@@ -203,9 +188,7 @@ public class Command {
 		 */
 		private DefaultLogicInvoker() {}
 
-		/* (non-Javadoc)
-		 * @see com.semernik.rockFest.command.LogicInvoker#invoke(com.semernik.rockFest.controller.SessionRequestContent)
-		 */
+
 		@Override
 		public boolean invoke(SessionRequestContent content) {
 			return true;

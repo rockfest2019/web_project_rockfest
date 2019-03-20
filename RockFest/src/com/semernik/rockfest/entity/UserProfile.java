@@ -6,19 +6,10 @@ package com.semernik.rockfest.entity;
  */
 public class UserProfile {
 
-	/** The added compositions count. */
 	private int addedCompositionsCount;
-
-	/** The added singers count. */
 	private int addedSingersCount;
-
-	/** The added genres count. */
 	private int addedGenresCount;
-
-	/** The assessed compositions count. */
 	private int assessedCompositionsCount;
-
-	/** The email. */
 	private String email;
 
 	/**

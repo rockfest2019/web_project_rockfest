@@ -9,7 +9,6 @@ public enum AttributeName {
 	GENRES("genres"),
 	SINGERS("singers"),
 	COMMENTS("comments"),
-	COMMENTS_FAILURE("comments_failure"),
 	USERS("users"),
 	USER_LOGIN("user_login"),
 	USER_ID("user_id"),
@@ -22,14 +21,7 @@ public enum AttributeName {
 	USER_RATING("user_rating"),
 	USER_PROFILE("user_profile"),
 	USER_PROFILE_CHANGE("user_profile_change"),
-	ERROR_MESSAGE("error_message"),
 	REGISTRATION_SUCCESS("registration_success"),
-	REGISTRATION_FAILURE("registration_failure"),
-	INVALID_EMAIL("invalid_email"),
-	INVALID_NEW_LOGIN("invalid_new_login"),
-	INVALID_NEW_PASSWORD("invalid_new_password"),
-	LOGIN_FAILURE("login_failure"),
-	RATING_FAILURE("rating_failure"),
 	CURRENT_PAGE("current_page"),
 	CURRENT_PAGE_ATTRIBUTES("current_page_attributes"),
 	SPECIFIC_RATING("specific_rating"),
@@ -47,8 +39,7 @@ public enum AttributeName {
 	RATING_END("rating_end"),
 	AJAX_COMMAND("ajax_command"),
 	ENTITIES("entities"),
-	DATE("date"),
-	GENRE_ERROR("genre_error")
+	DATE("date")
 	;
 
 	private String name;

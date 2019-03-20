@@ -14,7 +14,9 @@ import com.semernik.rockfest.entity.Entity;
 import com.semernik.rockfest.entity.Genre;
 import com.semernik.rockfest.entity.Singer;
 import com.semernik.rockfest.type.AttributeName;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
+import com.semernik.rockfest.util.ErrorUtil;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -22,24 +24,14 @@ import com.semernik.rockfest.type.ParameterName;
  */
 public class SearchService {
 
-	/** The logger. */
-	private static Logger logger = LogManager.getLogger();
 
-	/** The instance. */
+	private static Logger logger = LogManager.getLogger();
 	private static SearchService instance= new SearchService();
 
-	/**
-	 * Gets the single instance of SearchService.
-	 *
-	 * @return single instance of SearchService
-	 */
 	public static SearchService getInstance(){
 		return instance;
 	}
 
-	/**
-	 * Instantiates a new search service.
-	 */
 	private SearchService () {}
 
 	/**
@@ -49,16 +41,18 @@ public class SearchService {
 	 * @return true, if successful
 	 */
 	public boolean findCompositionsByPattern(SessionRequestContent content){
-		String pattern = content.getRequestParameters().get(ParameterName.SEARCH_PATTERN.toString())[0];
+		String pattern = content.getParameter(ParameterName.SEARCH_PATTERN.toString());
 		SearchDao dao = DaoFactory.getSearchDao();
 		Collection<Composition> foundCompositions = null;
 		boolean found = false;
 		try {
 			foundCompositions = dao.compositionsSearch(pattern);
-			content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), foundCompositions);
+			content.addRequestAttribute(AttributeName.COMPOSITIONS.toString(), foundCompositions);
 			found = true;
+			content.removeCurrentPageAttribute(ErrorMessage.SEARCH_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SEARCH_ERROR, content);
 		}
 		return found;
 	}
@@ -70,16 +64,18 @@ public class SearchService {
 	 * @return true, if successful
 	 */
 	public boolean findSingersByPattern(SessionRequestContent content){
-		String pattern = content.getRequestParameters().get(ParameterName.SEARCH_PATTERN.toString())[0];
+		String pattern = content.getParameter(ParameterName.SEARCH_PATTERN.toString());
 		SearchDao dao = DaoFactory.getSearchDao();
 		Collection<Singer> foundSingers = null;
 		boolean found = false;
 		try {
 			foundSingers = dao.singersSearch(pattern);
-			content.getRequestAttributes().put(AttributeName.SINGERS.toString(), foundSingers);
+			content.addRequestAttribute(AttributeName.SINGERS.toString(), foundSingers);
 			found = true;
+			content.removeCurrentPageAttribute(ErrorMessage.SEARCH_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SEARCH_ERROR, content);
 		}
 		return found;
 	}
@@ -91,7 +87,7 @@ public class SearchService {
 	 * @return true, if successful
 	 */
 	public boolean findGenresByPattern(SessionRequestContent content){
-		String pattern = content.getRequestParameters().get(ParameterName.SEARCH_PATTERN.toString())[0];
+		String pattern = content.getParameter(ParameterName.SEARCH_PATTERN.toString());
 		SearchDao dao = DaoFactory.getSearchDao();
 		Collection<Genre> foundGenres = null;
 		boolean found = false;
@@ -99,8 +95,10 @@ public class SearchService {
 			foundGenres = dao.genresSearch(pattern);
 			content.getRequestAttributes().put(AttributeName.GENRES.toString(), foundGenres);
 			found = true;
+			content.removeCurrentPageAttribute(ErrorMessage.SEARCH_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SEARCH_ERROR, content);
 		}
 		return found;
 	}
@@ -112,16 +110,18 @@ public class SearchService {
 	 * @return true, if successful
 	 */
 	public boolean findEntitiesByPattern(SessionRequestContent content){
-		String pattern = content.getRequestParameters().get(ParameterName.SEARCH_PATTERN.toString())[0];
+		String pattern = content.getParameter(ParameterName.SEARCH_PATTERN.toString());
 		SearchDao dao = DaoFactory.getSearchDao();
 		Collection<Entity> foundEntities = null;
 		boolean found = false;
 		try {
 			foundEntities = dao.entitiesSearch(pattern);
-			content.getRequestAttributes().put(AttributeName.ENTITIES.toString(), foundEntities);
+			content.addRequestAttribute(AttributeName.ENTITIES.toString(), foundEntities);
 			found = true;
+			content.removeCurrentPageAttribute(ErrorMessage.SEARCH_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SEARCH_ERROR, content);
 		}
 		return found;
 	}

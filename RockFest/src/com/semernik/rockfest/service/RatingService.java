@@ -2,7 +2,6 @@ package com.semernik.rockfest.service;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,8 +15,10 @@ import com.semernik.rockfest.entity.EntityRating;
 import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.CommandType;
 import com.semernik.rockfest.type.EntityType;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
 import com.semernik.rockfest.type.RatingsComparator;
+import com.semernik.rockfest.util.ErrorUtil;
 import com.semernik.rockfest.util.RatingUtil;
 import com.semernik.rockfest.util.RatingsDaoMethod;
 
@@ -27,27 +28,14 @@ import com.semernik.rockfest.util.RatingsDaoMethod;
  */
 public class RatingService {
 
-	/** The logger. */
 	private static Logger logger = LogManager.getLogger();
-
-	/** The instance. */
 	private static RatingService instance = new RatingService();
-
-	/** The Constant ELEMENTS_COUNT. */
 	private static final int ELEMENTS_COUNT = 5;
 
-	/**
-	 * Gets the single instance of RatingService.
-	 *
-	 * @return single instance of RatingService
-	 */
 	public static RatingService getInstance(){
 		return instance;
 	}
 
-	/**
-	 * Instantiates a new rating service.
-	 */
 	private RatingService(){}
 
 	/**
@@ -57,25 +45,20 @@ public class RatingService {
 	 * @return true, if successful
 	 */
 	public boolean saveUserRating(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		Long userId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		int melodyRating = Integer.parseInt(parameters.get(ParameterName.MELODY_RATING.toString())[0]);
-		int textRating = Integer.parseInt(parameters.get(ParameterName.TEXT_RATING.toString())[0]);
-		int musicRating = Integer.parseInt(parameters.get(ParameterName.MUSIC_RATING.toString())[0]);
-		int vocalRating = Integer.parseInt(parameters.get(ParameterName.VOCAL_RATING.toString())[0]);
-		EntityRating rating = new EntityRating(userId, compositionId, melodyRating, textRating, musicRating, vocalRating);
+		RatingUtil util = RatingUtil.getInstance();
+		EntityRating rating = util.getUserRatingFromContent(content);
 		RatingDao dao = DaoFactory.getRatingDao();
 		boolean saved = false;
 		try {
 			saved = dao.saveUserRating(rating);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("User rating was not saved ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (saved){
-			Map<String, Object> currrentPageAttributes = content.getCurrentPageAttributes();
-			currrentPageAttributes.put(AttributeName.USER_RATING.toString(), rating);
+			content.addCurrentPageAttribute(AttributeName.USER_RATING.toString(), rating);
 		}
 		return saved;
 	}
@@ -118,20 +101,21 @@ public class RatingService {
 	 * @return true, if successful
 	 */
 	private boolean findUserRating (RatingDaoMethod daoMethod, SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long entityId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		Long userId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		boolean found = false;
+		long entityId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		Long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		Optional<EntityRating> optional = Optional.empty();
+		boolean found = false;
 		try {
 			optional = daoMethod.apply(entityId, userId);
 			found = true;
 			if (optional.isPresent()){
 				EntityRating rating = optional.get();
 				content.getRequestAttributes().put(AttributeName.USER_RATING.toString(), rating);
+				content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
 			}
 		} catch (DaoException e) {
 			logger.error("Ratings are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
 		}
 		return found;
 	}
@@ -201,9 +185,7 @@ public class RatingService {
 	 * @return true, if successful
 	 */
 	private boolean findRatings(SessionRequestContent content, String comparingEntity){
-		System.out.println("findRatings");
-		Map<String, String[]> parameters = content.getRequestParameters();
-		String comparatorName = parameters.get(ParameterName.RATING_TYPE.toString())[0];
+		String comparatorName = content.getParameter(ParameterName.RATING_TYPE.toString());
 		RatingUtil ratingUtil = RatingUtil.getInstance();
 		RatingsDaoMethod daoMethod = ratingUtil.findRatingsDaoMethod(comparingEntity, comparatorName);
 		List<EntityRating> ratings = new LinkedList<>();
@@ -213,8 +195,10 @@ public class RatingService {
 			found = true;
 			ratings.forEach(RatingUtil.getInstance()::transformToAverageRatings);
 			addRatingAttributes(content, ratings, comparingEntity, comparatorName);
+			content.removeCurrentPageAttribute(ErrorMessage.RATING_FAILURE.toString());
 		} catch (DaoException e) {
 			logger.error("Ratings are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
 
 		return found;
@@ -230,20 +214,19 @@ public class RatingService {
 	 */
 	private void addRatingAttributes(SessionRequestContent content, List<EntityRating> ratings, String comparingEntity,
 			String comparatorName) {
-		Map<String, Object> requestAttributes = content.getRequestAttributes();
-		requestAttributes.put(AttributeName.RATINGS.toString(), ratings);
-		requestAttributes.put(AttributeName.SPECIFIC_RATING.toString(), true);
-		requestAttributes.put(AttributeName.COMPARATOR.toString(), comparatorName);
-		requestAttributes.put(AttributeName.COMPARING_ENTITY.toString(), comparingEntity);
+		content.addRequestAttribute(AttributeName.RATINGS.toString(), ratings);
+		content.addRequestAttribute(AttributeName.SPECIFIC_RATING.toString(), true);
+		content.addRequestAttribute(AttributeName.COMPARATOR.toString(), comparatorName);
+		content.addRequestAttribute(AttributeName.COMPARING_ENTITY.toString(), comparingEntity);
 		RatingUtil ratingUtil = RatingUtil.getInstance();
 		String entityCommand = ratingUtil.findEntityCommand(comparingEntity);
-		requestAttributes.put(AttributeName.ENTITY_COMMAND.toString(), entityCommand);
+		content.addRequestAttribute(AttributeName.ENTITY_COMMAND.toString(), entityCommand);
 		String ajaxCommand = ratingUtil.findAjaxCommand(comparingEntity);
-		requestAttributes.put(AttributeName.AJAX_COMMAND.toString(), ajaxCommand);
+		content.addRequestAttribute(AttributeName.AJAX_COMMAND.toString(), ajaxCommand);
 		String ratingCommand = ratingUtil.findRatingCommand(comparingEntity);
-		requestAttributes.put(AttributeName.RATING_COMMAND.toString(), ratingCommand);
+		content.addRequestAttribute(AttributeName.RATING_COMMAND.toString(), ratingCommand);
 		boolean ratingEnd = ELEMENTS_COUNT > ratings.size();
-		requestAttributes.put(AttributeName.RATING_END.toString(), ratingEnd);
+		content.addRequestAttribute(AttributeName.RATING_END.toString(), ratingEnd);
 	}
 
 
@@ -258,8 +241,8 @@ public class RatingService {
 		boolean found = findUserRatings(DaoFactory.getRatingDao()::findUserCompositionsRating , content,
 				EntityType.COMPOSITION.name().toLowerCase());
 		if (found){
-			content.getRequestAttributes().put(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_SINGER.name().toLowerCase());
-			content.getRequestAttributes().put(AttributeName.RATING_COMMAND.toString(),
+			content.addRequestAttribute(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_SINGER.name().toLowerCase());
+			content.addRequestAttribute(AttributeName.RATING_COMMAND.toString(),
 					CommandType.FIND_USER_COMPOSITIONS_RATINGS.name().toLowerCase());
 		}
 		return found;
@@ -275,8 +258,8 @@ public class RatingService {
 		boolean found = findUserRatings(DaoFactory.getRatingDao()::findUserSingersRating , content,
 				EntityType.SINGER.name().toLowerCase());
 		if (found){
-			content.getRequestAttributes().put(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_COMPOSITION.name().toLowerCase());
-			content.getRequestAttributes().put(AttributeName.RATING_COMMAND.toString(),
+			content.addRequestAttribute(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_COMPOSITION.name().toLowerCase());
+			content.addRequestAttribute(AttributeName.RATING_COMMAND.toString(),
 					CommandType.FIND_USER_SINGERS_RATINGS.name().toLowerCase());
 		}
 		return found;
@@ -292,8 +275,8 @@ public class RatingService {
 		boolean found = findUserRatings(DaoFactory.getRatingDao()::findUserGenresRating , content,
 				EntityType.GENRE.name().toLowerCase());
 		if (found){
-			content.getRequestAttributes().put(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_GENRE.name().toLowerCase());
-			content.getRequestAttributes().put(AttributeName.RATING_COMMAND.toString(),
+			content.addRequestAttribute(AttributeName.ENTITY_COMMAND.toString(), CommandType.FIND_GENRE.name().toLowerCase());
+			content.addRequestAttribute(AttributeName.RATING_COMMAND.toString(),
 					CommandType.FIND_USER_GENRES_RATINGS.name().toLowerCase());
 		}
 		return found;
@@ -308,9 +291,8 @@ public class RatingService {
 	 * @return true, if successful
 	 */
 	private boolean findUserRatings(UserRatingsDaoMethod daoMethod, SessionRequestContent content, String comparingEntity){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		String comparatorName = parameters.get(ParameterName.RATING_TYPE.toString())[0];
-		long userId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
+		String comparatorName = content.getParameter(ParameterName.RATING_TYPE.toString());
+		long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		RatingsComparator comparator = RatingsComparator.getInstance(comparatorName);
 		List<EntityRating> ratings = new LinkedList<>();
 		boolean found = false;
@@ -318,12 +300,14 @@ public class RatingService {
 			ratings = daoMethod.apply(userId);
 			found = true;
 			ratings.sort(comparator);
-			content.getRequestAttributes().put(AttributeName.USER_RATING.toString(), ratings);
-			content.getRequestAttributes().put(AttributeName.SPECIFIC_RATING.toString(), true);
-			content.getRequestAttributes().put(AttributeName.COMPARATOR.toString(), comparator.name());
-			content.getRequestAttributes().put(AttributeName.COMPARING_ENTITY.toString(), comparingEntity);
+			content.addRequestAttribute(AttributeName.USER_RATING.toString(), ratings);
+			content.addRequestAttribute(AttributeName.SPECIFIC_RATING.toString(), true);
+			content.addRequestAttribute(AttributeName.COMPARATOR.toString(), comparator.name());
+			content.addRequestAttribute(AttributeName.COMPARING_ENTITY.toString(), comparingEntity);
+			content.removeCurrentPageAttribute(ErrorMessage.RATING_FAILURE.toString());
 		} catch (DaoException e) {
 			logger.error("Ratings are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
 		return found;
 	}

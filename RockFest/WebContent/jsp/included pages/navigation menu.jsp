@@ -9,6 +9,7 @@
 
 	<c:set var="root" value="${pageContext.request.contextPath }"></c:set>
 	<c:set var="login_failure" value="${current_page_attributes['login_failure'] }"></c:set>
+	<c:set var="search_error" value="${current_page_attributes['search_error'] }"></c:set>
 	<nav>
 		<fmt:requestEncoding value = "UTF-8" />
 		<c:if test="${empty locale }"> <fmt:setLocale value="en_US"/></c:if>
@@ -23,7 +24,7 @@
 			<input type="submit" value=<fmt:message key="change_locale"/>>
 		</form>
 		<section>
-			<c:if test="${not empty login_failure }"><p><c:out value="${login_failure }"></c:out></p></c:if>
+		<section class="error_message"><c:out value="${login_failure }"></c:out></section>
 			<c:if test="${not empty user_id }">
 					<form action = "${root }/RockFest" method="post" class="profileLink">
 						<input name="id" value=${user_id } hidden>
@@ -67,6 +68,7 @@
 				<input type="submit" value="Search">
 			</form>
 			<button id="extendedSearch" class="extendedSearch" onclick="extendedSearch();">Extended</button>
+			<section class="error_message"><c:out value="${search_error }"></c:out></section>
 		</section>
 		<br>
 		<form action="${root }/RockFest">

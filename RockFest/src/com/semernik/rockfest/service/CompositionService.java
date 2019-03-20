@@ -1,16 +1,13 @@
 package com.semernik.rockfest.service;
 
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.semernik.rockfest.container.ErrorMessagesContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.dao.CommentsDao;
 import com.semernik.rockfest.dao.CompositionLinksDao;
@@ -20,12 +17,13 @@ import com.semernik.rockfest.dao.DaoFactory;
 import com.semernik.rockfest.dao.GenresDao;
 import com.semernik.rockfest.entity.Comment;
 import com.semernik.rockfest.entity.Composition;
-import com.semernik.rockfest.entity.Composition.CompositionBuilder;
 import com.semernik.rockfest.entity.Genre;
 import com.semernik.rockfest.entity.Link;
 import com.semernik.rockfest.type.AttributeName;
+import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
-import com.semernik.rockfest.util.GeneratorId;
+import com.semernik.rockfest.util.EntityUtil;
+import com.semernik.rockfest.util.ErrorUtil;
 
 
 
@@ -35,25 +33,13 @@ import com.semernik.rockfest.util.GeneratorId;
  */
 public class CompositionService {
 
-	/** The logger. */
 	private static Logger logger = LogManager.getLogger();
-
-	/** The instance. */
 	private static CompositionService instance= new CompositionService();
 
-	private final static String UPDATED_GENRES_ERROR = "updated genres display failure";
-	/**
-	 * Gets the single instance of CompositionService.
-	 *
-	 * @return single instance of CompositionService
-	 */
 	public static CompositionService getInstance(){
 		return instance;
 	}
 
-	/**
-	 * Instantiates a new composition service.
-	 */
 	private CompositionService () {}
 
 	/**
@@ -63,49 +49,21 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean saveComposition(SessionRequestContent content) {
-		Map<String, String[]> parameters = content.getRequestParameters();
-		String title = (parameters.get(ParameterName.TITLE.toString()))[0];
-		String year = (parameters.get(ParameterName.YEAR.toString()))[0];
-		long singerId = Long.parseLong((parameters.get(ParameterName.SINGER_ID.toString()))[0]);
-		long authorId = (Long)content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		long yearEditorId = authorId;
-		long genreEditorId = authorId;
-		long compositionId = GeneratorId.getInstance().generateCompositionId();
-		Date addingDate = new Date(System.currentTimeMillis());
-		Collection <Long> genresIds = findGenresIds(content);
-		CompositionBuilder builder = new CompositionBuilder();
-		Composition composition = builder.compositionId(compositionId).compositionTitle(title).year(year)
-				.singerId(singerId).authorId(authorId).yearEditorId(yearEditorId).genreEditorId(genreEditorId)
-				.addingDate(addingDate).genresIds(genresIds).build();
+		Composition composition = EntityUtil.getComposititonFromContent(content);
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean saved = false;
 		try {
 			saved = dao.saveComposition(composition);
+			saved = true;
 		} catch (DaoException e) {
 			logger.error("Composition didn't save " + composition, e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMPOSITION_ERROR, content);
+			content.setUsingCurrentPage(true);
 		}
 		if (saved){
-			Map <String, Object> attrs = content.getRequestAttributes();
-			attrs.put(AttributeName.COMPOSITION.toString(), composition);
+			content.addRequestAttribute(AttributeName.COMPOSITION.toString(), composition);
 		}
 		return saved;
-	}
-
-	/**
-	 * Find genres ids.
-	 *
-	 * @param content the content
-	 * @return the collection
-	 */
-	private Collection<Long> findGenresIds(SessionRequestContent content) {
-		Collection <Long> genresIds = new LinkedList<>();
-		String [] strIds = content.getRequestParameters().get(ParameterName.GENRES_IDS.toString());
-		if (strIds != null){
-			for (String idStr : strIds){
-				genresIds.add(Long.parseLong(idStr));
-			}
-		}
-		return genresIds;
 	}
 
 	/**
@@ -117,11 +75,11 @@ public class CompositionService {
 	public boolean findCompositions(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		Collection<Composition> compositions = null;
-		boolean found = true;
+		boolean found = false;
 		try {
 			compositions = dao.findAllCompositions();
+			found = true;
 		} catch (DaoException e) {
-			found = false;
 			logger.error("Compositions are not reachable ", e);
 		}
 		if (found){
@@ -139,14 +97,16 @@ public class CompositionService {
 	public boolean findSingerCompositions(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		Collection<Composition> compositions = null;
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long singerId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		boolean found = true;
+		long singerId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		boolean found = false;
 		try {
 			compositions = dao.findSingerCompositions(singerId);
+			found = true;
+			content.removeCurrentPageAttribute(ErrorMessage.COMPOSITIONS_ERROR.toString());
 		} catch (DaoException e) {
-			found = false;
 			logger.error("Compositions are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITIONS_ERROR, content);
+			content.setUsingCurrentPage(true);
 		}
 		if (found){
 			content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), compositions);
@@ -163,17 +123,19 @@ public class CompositionService {
 	public boolean findGenreCompositions(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		Collection<Composition> compositions = null;
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long genreId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		boolean found = true;
+		long genreId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		boolean found = false;
 		try {
 			compositions = dao.findGenreCompositions(genreId);
+			found = true;
+			content.getCurrentPageAttributes().remove(ErrorMessage.COMPOSITIONS_ERROR.toString());
 		} catch (DaoException e) {
-			found = false;
 			logger.error("Compositions are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITIONS_ERROR, content);
+			content.setUsingCurrentPage(true);
 		}
 		if (found){
-			content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), compositions);
+			content.addRequestAttribute(AttributeName.COMPOSITIONS.toString(), compositions);
 		}
 		return found;
 	}
@@ -197,20 +159,21 @@ public class CompositionService {
 	 */
 	public boolean findCompositionById(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		Optional<Composition> composition = Optional.empty();
 		try {
 			composition = dao.findCompositionById(compositionId);
+			content.removeCurrentPageAttribute(ErrorMessage.COMPOSITION_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Composition are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITION_ERROR, content);
 		}
 		boolean found = false;
 		if (composition.isPresent()){
 			found = true;
-			content.getRequestAttributes().put(AttributeName.COMPOSITION.toString(), composition.get());
+			content.addRequestAttribute(AttributeName.COMPOSITION.toString(), composition.get());
 			addCompositionLinks(compositionId, content);
-			if (content.getSessionAttributes().get(AttributeName.USER_ID.toString()) != null){
+			if (content.getSessionAttribute(AttributeName.USER_ID.toString()) != null){
 				addUserCompositionRatings(content);
 			}
 			addCompositionComments(compositionId, content);
@@ -229,9 +192,11 @@ public class CompositionService {
 		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
 		try {
 			links = dao.findCompositionLinksByCompositionId(compositionId);
-			content.getRequestAttributes().put(AttributeName.LINKS.toString(), links);
+			content.addRequestAttribute(AttributeName.LINKS.toString(), links);
+			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Links are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.LINK_ERROR, content);
 		}
 	}
 
@@ -243,9 +208,10 @@ public class CompositionService {
 	private void addUserCompositionRatings(SessionRequestContent content) {
 		RatingService ratingService = RatingService.getInstance();
 		boolean ratingsFound = ratingService.findCompositionUserRating(content);
-		if (!ratingsFound){
-			String message = ErrorMessagesContainer.findMessage(AttributeName.RATING_FAILURE.toString());
-			content.getRequestAttributes().put(AttributeName.RATING_FAILURE.toString(), message);
+		if (ratingsFound){
+			content.removeCurrentPageAttribute(ErrorMessage.RATING_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
 	}
 
@@ -260,11 +226,11 @@ public class CompositionService {
 		Collection<Comment> comments = null;
 		try {
 			comments = commentsDao.findCompositionCommentsByCompositionId(compositionId);
-			content.getRequestAttributes().put(AttributeName.COMMENTS.toString(), comments);
+			content.addRequestAttribute(AttributeName.COMMENTS.toString(), comments);
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 		} catch (DaoException e) {
-			String errorMessage = ErrorMessagesContainer.findMessage(AttributeName.COMMENTS_FAILURE.toString());
-			content.getRequestAttributes().put(AttributeName.COMMENTS_FAILURE.toString(), errorMessage);
 			logger.error("Comments are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMMENTS_FAILURE, content);
 		}
 	}
 
@@ -275,24 +241,19 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean saveCompositionComment(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long commentId = GeneratorId.getInstance().generateCompositionCommentId();
-		long commentedEntityId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		String commentContent = parameters.get(ParameterName.COMMENT_CONTENT.toString())[0];
-		Date date = new Date(System.currentTimeMillis());
-		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		Comment comment = new Comment(commentId, commentContent, date, authorId, commentedEntityId);
+		Comment comment = EntityUtil.getEntityCommentFromContent(content);
 		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean saved = false;
 		try {
 			saved = dao.saveCompositionComment(comment);
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 		} catch (DaoException e) {
 			logger.error("Comment is not saved ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (saved){
-			Map<String, Object> currrentPageAttributes = content.getCurrentPageAttributes();
-			Collection<Comment> comments = (Collection<Comment>) currrentPageAttributes.get(AttributeName.COMMENTS.toString());
+			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.add(comment);
 		}
 		return saved;
@@ -305,24 +266,19 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean saveCompositionLink(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		String url = parameters.get(ParameterName.URL.toString())[0];
-		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		Date addingDate = new Date(System.currentTimeMillis());
-		long linkId = GeneratorId.getInstance().generateCompositionLinkId();
-		Link link = new Link(compositionId, linkId, addingDate, url, authorId);
+		Link link = EntityUtil.getCompositionLinkFromContent(content);
 		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
 		boolean saved = false;
 		try {
 			saved = dao.saveCompositionLink(link);
+			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Composition link is not saved ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (saved){
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Collection<Link> links = (Collection<Link>) currentPageAttributes.get(AttributeName.LINKS.toString());
+			Collection<Link> links = (Collection<Link>) content.getCurrentPageAttribute(AttributeName.LINKS.toString());
 			links.add(link);
 		}
 		return saved;
@@ -335,16 +291,17 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean changeCompositionGenres(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
-		Collection <Long> genresIds = findGenresIds(content);
+		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		long authorId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
+		Collection <Long> genresIds = EntityUtil.findGenresIds(content);
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
 			changed = dao.changeCompositionGenres(compositionId, genresIds, authorId);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (changed){
@@ -358,12 +315,13 @@ public class CompositionService {
 		Collection<Genre> genres = new LinkedList<>();
 		try {
 			genres = genreDao.findGenresByCompositionId(compositionId);
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Composition composition = (Composition) currentPageAttributes.get(AttributeName.COMPOSITION.toString());
+			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
 			composition.setGenres(genres);
+			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
-			content.getRequestAttributes().put(AttributeName.GENRE_ERROR.toString(), UPDATED_GENRES_ERROR);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, ErrorMessage.COMPOSITION_GENRES_ERROR,
+					content);
 		}
 	}
 
@@ -374,79 +332,79 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean changeCompositionYear(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		String newYear = parameters.get(ParameterName.YEAR.toString())[0];
-		long authorId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
+		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		String newYear = content.getParameter(ParameterName.YEAR.toString());
+		long authorId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
 			changed = dao.changeCompositionYear(compositionId, newYear, authorId);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_YEAR_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_YEAR_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (changed){
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Composition composition = (Composition) currentPageAttributes.get(AttributeName.COMPOSITION.toString());
+			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
 			composition.setYear(newYear);
 		}
 		return changed;
 	}
 
 	public boolean deleteCompositionComment(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long commentId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		long commentId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean deleted = false;
 		try {
 			deleted = dao.deleteCompositionComment(commentId);
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (deleted){
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Collection<Comment> comments = (Collection<Comment>) currentPageAttributes.get(AttributeName.COMMENTS.toString());
+			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.removeIf(a -> a.getCommentId() == commentId);
 		}
 		return deleted;
 	}
 
 	public boolean deleteCompositionLink(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long linkId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
+		long linkId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
 		boolean deleted = false;
 		try {
 			deleted = dao.deleteCompositionLink(linkId);
+			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
-		}
-		if (deleted){
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Collection<Link> links = (Collection<Link>) currentPageAttributes.get(AttributeName.LINKS.toString());
-			links.removeIf(a -> a.getLinkId() == linkId);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.DELETE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		if (deleted){
+			Collection<Link> links = (Collection<Link>) content.getCurrentPageAttribute(AttributeName.LINKS.toString());
+			links.removeIf(a -> a.getLinkId() == linkId);
+		}
 		return deleted;
 	}
 
 	public boolean changeCompositionTitle(SessionRequestContent content){
-		Map<String, String[]> parameters = content.getRequestParameters();
-		long compositionId = Long.parseLong(parameters.get(ParameterName.ID.toString())[0]);
-		String newTitle = parameters.get(ParameterName.TITLE.toString())[0];
+		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
+		String newTitle = content.getParameter(ParameterName.TITLE.toString());
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
 			changed = dao.changeCompositionTitle(compositionId, newTitle);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
 		if (changed){
-			Map<String, Object> currentPageAttributes = content.getCurrentPageAttributes();
-			Composition composition = (Composition) currentPageAttributes.get(AttributeName.COMPOSITION.toString());
+			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
 			composition.setCompositionTitle(newTitle);
 		}
 		return changed;

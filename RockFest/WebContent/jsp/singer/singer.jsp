@@ -17,9 +17,16 @@
 	<header><fmt:message key="singer"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
+		<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
+		<c:set var="singer_error" value="${current_page_attributes['singer_error'] }"></c:set>
+		<c:set var="update_title_error" value="${current_page_attributes['update_title_error'] }"></c:set>
+		<c:set var="update_description_error" value="${current_page_attributes['update_description_error'] }"></c:set>
+		<c:set var="comments_failure" value="${current_page_attributes['comments_failure'] }"></c:set>
 		<c:set var="singer" value="${current_page_attributes['singer'] }"></c:set>
 		<c:set var="user_rating" value="${current_page_attributes['user_rating'] }"></c:set>
 		<c:set var="comments" value="${current_page_attributes['comments'] }"></c:set>
+		<c:set var="save_genre_error" value="${current_page_attributes['save_genre_error'] }"></c:set>
+		<section class="error_message"><c:out value="${singer_error }"></c:out></section>
 		<h1><fmt:message key="singer"/></h1>
 				<section>
 					<b><fmt:message key="title"/></b><h2><c:out value="${singer.title }"></c:out></h2>
@@ -33,6 +40,7 @@
 							<input type="submit" value="change title">
 						</form>
 					</c:if>
+					<section class="error_message"><c:out value="${update_title_error }"></c:out></section>
 				</section>
 				<form action="${pageContext.request.contextPath }/RockFest">
 				<input name="id" value ="${singer.singerId}" hidden></input>
@@ -53,6 +61,7 @@
 						</form></section>
 					</c:if>
 				</section>
+				<section class="error_message"><c:out value="${update_description_error }"></c:out></section>
 				<section>
 				<c:if test="${ singer.votedUsersCount == 0}">
 					<fmt:message key="rating_lack_message"/>
@@ -96,7 +105,7 @@
 						</section>
 						<section><h2><b><fmt:message key="voted_users_count"/></b><c:out value=" ${singer.votedUsersCount }"></c:out></h2></section>
 					</section>
-					<section>
+					<section class="error_message"><c:out value="${rating_failure }"></c:out></section>
 						<c:if test="${not empty user_rating and not empty user_id}">
 						<form action = "${pageContext.request.contextPath }/RockFest">
 							<input type="text" name="ratingType" value="general" hidden>
@@ -151,6 +160,7 @@
 						</section>
 					</c:forEach>
 				</section>
+				<section class="error_message"><c:out value="${comments_failure }"></c:out></section>
 				<c:if test="${not empty user_id }">
 					Your comment:<br>
 					<form action="${pageContext.request.contextPath }/RockFest" method="post">

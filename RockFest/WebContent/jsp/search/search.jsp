@@ -15,8 +15,10 @@
 		<c:set var="genres" value="${current_page_attributes['genres'] }"></c:set>
 		<c:set var="singers" value="${current_page_attributes['singers'] }"></c:set>
 		<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
+		<c:set var="search_error" value="${current_page_attributes['error_message'] }"></c:set>
 		<section>
-			<c:out value="${ error_message}"></c:out>
+			<section class="error_message"><c:out value="${error_message }"></c:out></section>
+			<section class="error_message"><c:out value="${search_error }"></c:out></section>
 			<c:forEach var="entity" items="${entities }">
 				<form action="${pageContext.request.contextPath }/RockFest">
 					<input name="id" value ="${entity.id}" hidden>

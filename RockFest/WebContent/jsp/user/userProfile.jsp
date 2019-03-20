@@ -11,12 +11,16 @@
 	<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
 	<c:set var="user_profile_change" value="${current_page_attributes['user_profile_change'] }"></c:set>
 	<c:set var="user_profile" value="${current_page_attributes['user_profile'] }"></c:set>
-	<header>Header</header>
+	<c:set var="user_profile_error" value="${current_page_attributes['user_profile_error'] }"></c:set>
+	<c:set var="user_info_change_failure" value="${current_page_attributes['user_info_change_failure'] }"></c:set>
+	<header>User profile</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
+	<section class="error_message"><c:out value="${user_profile_error }"></c:out></section>
+	<section class="error_message"><c:out value="${error_message }"></c:out></section>
 	<c:if test="${not empty user_id }">
 	<main>
+		<section class="error_message"><c:out value="${user_info_change_failure }"></c:out></section>
 		<p>User profile</p>
-		<c:out value="${error_message }"></c:out>
 		<c:out value="${user_profile_change }"></c:out>
 		<section>
 			<c:if test="${role eq 'admin' }">
@@ -31,6 +35,7 @@
 		<p> Added singers count: ${user_profile.addedSingersCount }</p>
 		<p> Compositions ratings count: ${user_profile.assessedCompositionsCount }</p>
 		<p> Email: ${user_profile.email }</p>
+		<section class="error_message"><c:out value="${user_info_change_failure }"></c:out></section>
 		<form action="${pageContext.request.contextPath }/RockFest" method="post">
 			<input type="text" name="command" value="change_email" hidden>
 			New email:<input type="email" name="newEmail" required maxlength="50"><br>

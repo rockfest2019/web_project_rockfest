@@ -14,12 +14,18 @@
 	<c:set var="week_ban" value="${current_date + 7*24*60*60*1000 }"></c:set>
 	<c:set var="month_ban" value="${current_date + 30*24*60*60*1000 }"></c:set>
 	<c:set var="forever_ban" value="${current_date + 100*12*30*24*60*60*1000 }"></c:set>
+	<c:set var="admin_profile_error" value="${current_page_attributes['admin_profile_error'] }"></c:set>
+	<c:set var="user_info_change_failure" value="${current_page_attributes['user_info_change_failure'] }"></c:set>
+	<c:set var="ban_date_saving_failure" value="${current_page_attributes['ban_date_saving_failure'] }"></c:set>
 	<header>Admin page</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
 		<h1>Admin page</h1>
-		<c:out value="${error_message }"></c:out>
+		<section class="error_message"><c:out value="${error_message }"></c:out></section>
+		<section class="error_message"><c:out value="${admin_profile_error }"></c:out></section>
 		<c:if test="${role eq 'admin' }">
+			<section class="error_message"><c:out value="${user_info_change_failure }"></c:out></section>
+			<section class="error_message"><c:out value="${ban_date_saving_failure }"></c:out></section>
 			<section><c:forEach var="user" items="${users }">
 				<section>
 					<c:out value="${user.login }"></c:out>

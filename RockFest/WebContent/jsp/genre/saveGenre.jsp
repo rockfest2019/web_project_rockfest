@@ -14,6 +14,8 @@
 	<header><fmt:message key="new_genre"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
+		<c:set var="save_genre_error" value="${current_page_attributes['save_genre_error'] }"></c:set>
+		<section class="error_message"><c:out value="${save_genre_error }"></c:out></section>
 		<form action="${pageContext.request.contextPath }/RockFest" method="post">
 		<input name="command" value="save_genre" hidden>
 			<p><b><fmt:message key="title"/></b></p>

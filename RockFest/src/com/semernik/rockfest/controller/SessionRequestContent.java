@@ -17,12 +17,20 @@ import com.semernik.rockfest.type.SendingMethod;
 public class SessionRequestContent {
 
 
-	private Map <String, Object> requestAttributes = new HashMap<>();
-	private Map <String, String[]> requestParameters = new HashMap<>();
-	private Map <String, Object> sessionAttributes = new HashMap<>();
+	private static final String EMPTY_PARAMETER = "";
+	private Map <String, Object> requestAttributes;
+	private Map <String, String[]> requestParameters;
+	private Map <String, Object> sessionAttributes;
 	private boolean useCurrentPage;
 	private String ajaxResponse;
 	private SendingMethod sendingMethod;
+
+	public SessionRequestContent() {
+		requestAttributes = new HashMap<>();
+		requestParameters = new HashMap<>();
+		sessionAttributes = new HashMap<>();
+		sessionAttributes.put(AttributeName.CURRENT_PAGE_ATTRIBUTES.toString(), new HashMap<String, Object>());
+	}
 
 
 	void extractValuesFromRequest(HttpServletRequest request){
@@ -78,11 +86,7 @@ public class SessionRequestContent {
 		return requestParameters;
 	}
 
-	/**
-	 * Gets the session attributes.
-	 *
-	 * @return the session attributes
-	 */
+
 	public Map<String, Object> getSessionAttributes() {
 		return sessionAttributes;
 	}
@@ -179,6 +183,57 @@ public class SessionRequestContent {
 		this.sendingMethod = sendingMethod;
 	}
 
+	public void setRequestParameters(Map<String, String[]> requestParameters) {
+		this.requestParameters = requestParameters;
+	}
+
+	public void setSessionAttributes(Map<String, Object> sessionAttributes) {
+		this.sessionAttributes = sessionAttributes;
+	}
+
+	public void addRequestAttribute(String name, Object value){
+		requestAttributes.put(name, value);
+	}
+
+	public void addCurrentPageAttribute(String name, Object value){
+		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
+		currentPageAttributes.put(name, value);
+	}
+
+	public Object getCurrentPageAttribute(String name){
+		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
+		return currentPageAttributes.get(name);
+	}
+
+	public void removeCurrentPageAttribute(String name){
+		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
+		currentPageAttributes.remove(name);
+	}
+
+	public String getParameter(String name){
+		String [] parameters = requestParameters.get(name);
+		String parameter = EMPTY_PARAMETER;
+		if (parameters != null && parameters.length >0){
+			parameter = parameters[0];
+		}
+		return parameter;
+	}
+
+	public String[] getParameters(String name){
+		String [] parameters = requestParameters.get(name);
+		if (parameters == null ){
+			parameters = new String [1];
+		}
+		return parameters;
+	}
+
+	public Object getSessionAttribute(String name){
+		return sessionAttributes.get(name);
+	}
+
+	public void addSessionAttribute(String name, Object value){
+		sessionAttributes.put(name, value);
+	}
 
 
 
