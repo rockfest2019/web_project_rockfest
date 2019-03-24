@@ -9,7 +9,7 @@
 <body>
 	<header>Header</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
-	<main>
+	<main class="common_background">
 		<h1>Internal server error</h1>
 	</main>
 </body>

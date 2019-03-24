@@ -51,6 +51,15 @@ public interface GenresDao extends Dao {
 	Collection<Genre> findAllGenres() throws DaoException;
 
 	/**
+	 * Find specific part of genres.
+	 * @param position the position in genres from which selection begin
+	 * @param elementsCount the elements count from the position
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
+	Collection<Genre> findGenres(int position, int elementsCount) throws DaoException;
+
+	/**
 	 * Find genre by id.
 	 *
 	 * @param genreId the genre id
@@ -59,6 +68,14 @@ public interface GenresDao extends Dao {
 	 */
 	Optional<Genre> findGenreById(long genreId) throws DaoException;
 
+	/**
+	 * Change genre title.
+	 *
+	 * @param genreId the genre id
+	 * @param newTitle the new genre title
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
 	boolean changeGenreTitle(long genreId, String newTitle) throws DaoException;
 
 }

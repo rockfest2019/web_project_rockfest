@@ -58,15 +58,15 @@ public class UserValidator {
 				|| !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet())){
 			return false;
 		}
-		boolean valid = true;
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String login = requestParameters.get(ParameterName.USER_LOGIN.toString())[0];
-		String password = requestParameters.get(ParameterName.PASSWORD.toString())[0];
-		if ( login.length() > LOGIN_LENGTH || password.length() > PASSWORD_LENGTH){
-			valid = false;
-			content.getCurrentPageAttributes().remove(ErrorMessage.LOGIN_FAILURE.toString());
+
+		String login = content.getParameter(ParameterName.USER_LOGIN.toString());
+		String password = content.getParameter(ParameterName.PASSWORD.toString());
+		boolean valid = false;
+		if ( login.length() <= LOGIN_LENGTH && password.length() <= PASSWORD_LENGTH){
+			valid = true;
+			content.removeCurrentPageAttribute(ErrorMessage.LOGIN_FAILURE.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOGIN_PARAMETERS, ErrorMessage.LOGIN_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_LOGIN_PARAMETERS, ErrorMessage.LOGIN_FAILURE, content);
 		}
 		return valid;
 	}
@@ -113,17 +113,16 @@ public class UserValidator {
 			return false;
 		}
 		boolean valid = false;
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String melody = requestParameters.get(ParameterName.MELODY_RATING.toString())[0];
-		String text = requestParameters.get(ParameterName.TEXT_RATING.toString())[0];
-		String music = requestParameters.get(ParameterName.MUSIC_RATING.toString())[0];
-		String vocal = requestParameters.get(ParameterName.VOCAL_RATING.toString())[0];
-		String compositionId = requestParameters.get(ParameterName.ID.toString())[0];
-		Long userId = (Long) content.getSessionAttributes().get(AttributeName.USER_ID.toString());
+		String melody = content.getParameter(ParameterName.MELODY_RATING.toString());
+		String text = content.getParameter(ParameterName.TEXT_RATING.toString());
+		String music = content.getParameter(ParameterName.MUSIC_RATING.toString());
+		String vocal = content.getParameter(ParameterName.VOCAL_RATING.toString());
+		String compositionId = content.getParameter(ParameterName.ID.toString());
+		Long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		if ( userId != null && validId(compositionId) && validRating(melody)
 				&& validRating(text) && validRating(music) && validRating(vocal)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_USER_RATING.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_USER_RATING.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_USER_RATING, content);
 		}
@@ -162,11 +161,11 @@ public class UserValidator {
 		if (content == null){
 			return false;
 		}
+		String locale = content.getParameter(ParameterName.LOCALE.toString());
 		boolean valid = false;
-		String [] locales = content.getRequestParameters().get(ParameterName.LOCALE.toString());
-		if (locales != null && locales.length > 0 && validLocale(locales[0])){
+		if (validLocale(locale)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_LOCALE.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_LOCALE.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOCALE, content);
 		}
@@ -194,18 +193,17 @@ public class UserValidator {
 		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getRegistrationSet())){
 			return false;
 		}
+		String login =content.getParameter(ParameterName.USER_LOGIN.toString());
+		String password = content.getParameter(ParameterName.PASSWORD.toString());
+		String email = content.getParameter(ParameterName.USER_EMAIL.toString());
 		boolean valid = false;
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String login = requestParameters.get(ParameterName.USER_LOGIN.toString())[0];
-		String password = requestParameters.get(ParameterName.PASSWORD.toString())[0];
-		String email = requestParameters.get(ParameterName.USER_EMAIL.toString())[0];
 		boolean validEmail = validEmail(email);
 		if ( login.length() <= LOGIN_LENGTH && password.length() <= PASSWORD_LENGTH && validEmail){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_EMAIL.toString());
-			content.getCurrentPageAttributes().remove(ErrorMessage.REGISTRATION_FAILURE.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_EMAIL.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.REGISTRATION_FAILURE.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_REGISTRATION_PARAMETERS, ErrorMessage.REGISTRATION_FAILURE,
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_REGISTRATION_PARAMETERS, ErrorMessage.REGISTRATION_FAILURE,
 					content);
 			if (!validEmail){
 				ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_EMAIL, content);
@@ -242,11 +240,10 @@ public class UserValidator {
 		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewEmailSet())){
 			return false;
 		}
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String newEmail = requestParameters.get(ParameterName.NEW_EMAIL.toString())[0];
+		String newEmail = content.getParameter(ParameterName.NEW_EMAIL.toString());
 		boolean valid = validEmail(newEmail);
 		if (valid){
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_EMAIL.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_EMAIL.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_EMAIL, content);
 		}
@@ -263,11 +260,10 @@ public class UserValidator {
 		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewLoginSet())){
 			return false;
 		}
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String newLogin = requestParameters.get(ParameterName.NEW_LOGIN.toString())[0];
+		String newLogin = content.getParameter(ParameterName.NEW_LOGIN.toString());
 		boolean valid = newLogin.length() <= LOGIN_LENGTH;
 		if (valid){
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_NEW_LOGIN.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_NEW_LOGIN.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_LOGIN, content);
 		}
@@ -284,11 +280,10 @@ public class UserValidator {
 		if (!validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getNewPasswordSet())){
 			return false;
 		}
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String newPassword = requestParameters.get(ParameterName.NEW_PASSWORD.toString())[0];
+		String newPassword = content.getParameter(ParameterName.NEW_PASSWORD.toString());
 		boolean valid = newPassword.length() <= PASSWORD_LENGTH;
 		if (valid){
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_NEW_PASSWORD.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_NEW_PASSWORD.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_PASSWORD, content);
 		}
@@ -304,7 +299,7 @@ public class UserValidator {
 	public boolean validUser (SessionRequestContent content){
 		boolean valid =  (content != null && !requestedSessionNamesMiss(content, RequiredParametersContainer.getSessionUserSet()));
 		if (valid){
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_USER.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_USER.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_USER, content);
 		}
@@ -321,11 +316,12 @@ public class UserValidator {
 		if (content == null){
 			return false;
 		}
-		String[] loginArray = content.getRequestParameters().get(ParameterName.USER_LOGIN.toString());
+		String login = content.getParameter(ParameterName.USER_LOGIN.toString());
 		boolean valid = false;
-		if (loginArray != null && loginArray[0].length() <= LOGIN_LENGTH){
+		int len = login.length();
+		if (len <= LOGIN_LENGTH && len > 0){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_LOGIN.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_LOGIN.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOGIN, content);
 		}
@@ -336,10 +332,10 @@ public class UserValidator {
 		if (!validUser(content)){
 			return false;
 		}
-		String role = (String)content.getSessionAttributes().get(AttributeName.ROLE.toString());
+		String role = (String)content.getSessionAttribute(AttributeName.ROLE.toString());
 		boolean valid =  role.equals(Role.ADMIN.toString());
 		if (valid){
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_ADMIN.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_ADMIN.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_ADMIN, content);
 		}
@@ -350,13 +346,12 @@ public class UserValidator {
 		if (!validAdmin(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getUserBanDateSet())){
 			return false;
 		}
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String banDate = requestParameters.get(ParameterName.DATE.toString())[0];
-		String userId = requestParameters.get(ParameterName.ID.toString())[0];
+		String banDate = content.getParameter(ParameterName.DATE.toString());
+		String userId = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
 		if (validBanDate(banDate) && validId(userId)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_DATE.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_DATE.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_DATE, content);
 		}

@@ -2,7 +2,6 @@ package com.semernik.rockfest.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
@@ -50,18 +49,25 @@ public class CompositionService {
 	 */
 	public boolean saveComposition(SessionRequestContent content) {
 		Composition composition = EntityUtil.getComposititonFromContent(content);
-		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean saved = false;
 		try {
-			saved = dao.saveComposition(composition);
-			saved = true;
+			saved = tryToSaveComposition(composition, content);
 		} catch (DaoException e) {
 			logger.error("Composition didn't save " + composition, e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMPOSITION_ERROR, content);
 			content.setUsingCurrentPage(true);
 		}
+		return saved;
+	}
+
+	private boolean tryToSaveComposition(Composition composition, SessionRequestContent content) throws DaoException {
+		CompositionsDao dao = DaoFactory.getCompositionsDao();
+		boolean saved = dao.saveComposition(composition);
 		if (saved){
 			content.addRequestAttribute(AttributeName.COMPOSITION.toString(), composition);
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMPOSITION_ERROR, content);
+			content.setUsingCurrentPage(true);
 		}
 		return saved;
 	}
@@ -73,19 +79,24 @@ public class CompositionService {
 	 * @return true, if successful
 	 */
 	public boolean findCompositions(SessionRequestContent content){
-		CompositionsDao dao = DaoFactory.getCompositionsDao();
-		Collection<Composition> compositions = null;
+		int position = Integer.parseInt(content.getParameter(ParameterName.POSITION.toString()));
+		int elementsCount = Integer.parseInt(content.getParameter(ParameterName.ELEMENTS_COUNT.toString()));
 		boolean found = false;
 		try {
-			compositions = dao.findAllCompositions();
-			found = true;
+			found = tryFindCompositions(position, elementsCount, content);
 		} catch (DaoException e) {
 			logger.error("Compositions are not reachable ", e);
 		}
-		if (found){
-			content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), compositions);
-		}
 		return found;
+	}
+
+	private boolean tryFindCompositions(int position, int elementsCount, SessionRequestContent content) throws DaoException {
+		CompositionsDao dao = DaoFactory.getCompositionsDao();
+		Collection<Composition> compositions = dao.findCompositions(position, elementsCount);
+		content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), compositions);
+		content.addRequestAttribute(AttributeName.POSITION.toString(), position);
+		content.addRequestAttribute(AttributeName.ELEMENTS_COUNT.toString(), elementsCount);
+		return true;
 	}
 
 	/**
@@ -96,20 +107,17 @@ public class CompositionService {
 	 */
 	public boolean findSingerCompositions(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
-		Collection<Composition> compositions = null;
 		long singerId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		boolean found = false;
 		try {
-			compositions = dao.findSingerCompositions(singerId);
-			found = true;
+			Collection<Composition> compositions = dao.findSingerCompositions(singerId);
+			content.addRequestAttribute(AttributeName.COMPOSITIONS.toString(), compositions);
 			content.removeCurrentPageAttribute(ErrorMessage.COMPOSITIONS_ERROR.toString());
+			found = true;
 		} catch (DaoException e) {
 			logger.error("Compositions are not reachable ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITIONS_ERROR, content);
 			content.setUsingCurrentPage(true);
-		}
-		if (found){
-			content.getRequestAttributes().put(AttributeName.COMPOSITIONS.toString(), compositions);
 		}
 		return found;
 	}
@@ -122,20 +130,17 @@ public class CompositionService {
 	 */
 	public boolean findGenreCompositions(SessionRequestContent content){
 		CompositionsDao dao = DaoFactory.getCompositionsDao();
-		Collection<Composition> compositions = null;
 		long genreId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		boolean found = false;
 		try {
-			compositions = dao.findGenreCompositions(genreId);
+			Collection<Composition> compositions = dao.findGenreCompositions(genreId);
+			content.addRequestAttribute(AttributeName.COMPOSITIONS.toString(), compositions);
+			content.removeCurrentPageAttribute(ErrorMessage.COMPOSITIONS_ERROR.toString());
 			found = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.COMPOSITIONS_ERROR.toString());
 		} catch (DaoException e) {
 			logger.error("Compositions are not reachable ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITIONS_ERROR, content);
 			content.setUsingCurrentPage(true);
-		}
-		if (found){
-			content.addRequestAttribute(AttributeName.COMPOSITIONS.toString(), compositions);
 		}
 		return found;
 	}
@@ -168,17 +173,26 @@ public class CompositionService {
 			logger.error("Composition are not reachable ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITION_ERROR, content);
 		}
-		boolean found = false;
-		if (composition.isPresent()){
-			found = true;
-			content.addRequestAttribute(AttributeName.COMPOSITION.toString(), composition.get());
+		return tryAddCompositionToContent(composition, content);
+	}
+
+	private boolean tryAddCompositionToContent(Optional<Composition> optional, SessionRequestContent content) {
+		boolean added = false;
+		if (optional.isPresent()){
+			Composition composition = optional.get();
+			long compositionId = composition.getCompositionId();
+			content.addRequestAttribute(AttributeName.COMPOSITION.toString(), composition);
 			addCompositionLinks(compositionId, content);
 			if (content.getSessionAttribute(AttributeName.USER_ID.toString()) != null){
 				addUserCompositionRatings(content);
 			}
 			addCompositionComments(compositionId, content);
+			added = true;
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.COMPOSITION_ERROR, content);
 		}
-		return found;
+		return added;
+
 	}
 
 	/**
@@ -223,9 +237,8 @@ public class CompositionService {
 	 */
 	private void addCompositionComments(long compositionId, SessionRequestContent content) {
 		CommentsDao commentsDao = DaoFactory.getCommentsDao();
-		Collection<Comment> comments = null;
 		try {
-			comments = commentsDao.findCompositionCommentsByCompositionId(compositionId);
+			Collection<Comment> comments = commentsDao.findCompositionCommentsByCompositionId(compositionId);
 			content.addRequestAttribute(AttributeName.COMMENTS.toString(), comments);
 			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 		} catch (DaoException e) {
@@ -242,19 +255,26 @@ public class CompositionService {
 	 */
 	public boolean saveCompositionComment(SessionRequestContent content){
 		Comment comment = EntityUtil.getEntityCommentFromContent(content);
-		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean saved = false;
 		try {
-			saved = dao.saveCompositionComment(comment);
-			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+			saved = trySaveCompositionComment(comment, content);
 		} catch (DaoException e) {
 			logger.error("Comment is not saved ", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return saved;
+	}
+
+	private boolean trySaveCompositionComment(Comment comment, SessionRequestContent content) throws DaoException {
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean saved = dao.saveCompositionComment(comment);
 		if (saved){
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.add(comment);
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		return saved;
 	}
@@ -267,19 +287,27 @@ public class CompositionService {
 	 */
 	public boolean saveCompositionLink(SessionRequestContent content){
 		Link link = EntityUtil.getCompositionLinkFromContent(content);
-		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
 		boolean saved = false;
 		try {
-			saved = dao.saveCompositionLink(link);
-			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
+			saved = trySaveCompositionLink(link, content);
 		} catch (DaoException e) {
 			logger.error("Composition link is not saved ", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+
+		return saved;
+	}
+
+	private boolean trySaveCompositionLink(Link link, SessionRequestContent content) throws DaoException {
+		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
+		boolean saved = dao.saveCompositionLink(link);
 		if (saved){
+			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
 			Collection<Link> links = (Collection<Link>) content.getCurrentPageAttribute(AttributeName.LINKS.toString());
 			links.add(link);
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
 		return saved;
 	}
@@ -294,35 +322,46 @@ public class CompositionService {
 		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		long authorId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		Collection <Long> genresIds = EntityUtil.findGenresIds(content);
-		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
-			changed = dao.changeCompositionGenres(compositionId, genresIds, authorId);
-			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
+			changed = tryChangeCompositionGenres(compositionId, authorId, genresIds, content);
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeCompositionGenres(long compositionId, long authorId, Collection<Long> genresIds,
+			SessionRequestContent content) throws DaoException {
+		CompositionsDao dao = DaoFactory.getCompositionsDao();
+		boolean changed = dao.changeCompositionGenres(compositionId, genresIds, authorId);
 		if (changed){
 			addNewCompositionGenresToContent(compositionId, content);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, content);
 		}
 		return changed;
 	}
 
 	private void addNewCompositionGenresToContent(long compositionId, SessionRequestContent content) {
-		GenresDao genreDao = DaoFactory.getGenresDao();
-		Collection<Genre> genres = new LinkedList<>();
 		try {
-			genres = genreDao.findGenresByCompositionId(compositionId);
-			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
-			composition.setGenres(genres);
-			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
+			tryAddNewCompositionGenresToContent(compositionId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, ErrorMessage.COMPOSITION_GENRES_ERROR,
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR, ErrorMessage.COMPOSITION_GENRES_ERROR,
 					content);
 		}
+	}
+
+	private void tryAddNewCompositionGenresToContent(long compositionId, SessionRequestContent content) throws DaoException{
+		GenresDao genreDao = DaoFactory.getGenresDao();
+		Collection<Genre> genres = genreDao.findGenresByCompositionId(compositionId);
+		Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
+		composition.setGenres(genres);
+		content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_COMPOSITION_GENRES_ERROR.toString());
 	}
 
 	/**
@@ -335,77 +374,106 @@ public class CompositionService {
 		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		String newYear = content.getParameter(ParameterName.YEAR.toString());
 		long authorId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
-		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
-			changed = dao.changeCompositionYear(compositionId, newYear, authorId);
-			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_YEAR_ERROR.toString());
+			changed = tryChangeCompositionYear(compositionId, newYear, authorId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_YEAR_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeCompositionYear(long compositionId, String newYear, long authorId,
+			SessionRequestContent content) throws DaoException {
+		CompositionsDao dao = DaoFactory.getCompositionsDao();
+		boolean changed = dao.changeCompositionYear(compositionId, newYear, authorId);
 		if (changed){
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_YEAR_ERROR.toString());
 			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
 			composition.setYear(newYear);
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_YEAR_ERROR, content);
 		}
 		return changed;
 	}
 
 	public boolean deleteCompositionComment(SessionRequestContent content){
 		long commentId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
-		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean deleted = false;
 		try {
-			deleted = dao.deleteCompositionComment(commentId);
-			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+			deleted = tryDeleteCompositionComment(commentId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return deleted;
+	}
+
+	private boolean tryDeleteCompositionComment(long commentId, SessionRequestContent content) throws DaoException {
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean deleted = dao.deleteCompositionComment(commentId);
 		if (deleted){
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.removeIf(a -> a.getCommentId() == commentId);
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		return deleted;
 	}
 
 	public boolean deleteCompositionLink(SessionRequestContent content){
 		long linkId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
-		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
 		boolean deleted = false;
 		try {
-			deleted = dao.deleteCompositionLink(linkId);
-			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
+			deleted = tryDeleteCompositionLink(linkId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.DELETE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return deleted;
+	}
+
+	private boolean tryDeleteCompositionLink(long linkId, SessionRequestContent content) throws DaoException {
+		CompositionLinksDao dao = DaoFactory.getCompositionLinksDao();
+		boolean deleted = dao.deleteCompositionLink(linkId);
 		if (deleted){
+			content.removeCurrentPageAttribute(ErrorMessage.LINK_ERROR.toString());
 			Collection<Link> links = (Collection<Link>) content.getCurrentPageAttribute(AttributeName.LINKS.toString());
 			links.removeIf(a -> a.getLinkId() == linkId);
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_LINK_ERROR, ErrorMessage.LINK_ERROR, content);
 		}
-		return deleted;
+		return false;
 	}
 
 	public boolean changeCompositionTitle(SessionRequestContent content){
 		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		String newTitle = content.getParameter(ParameterName.TITLE.toString());
-		CompositionsDao dao = DaoFactory.getCompositionsDao();
 		boolean changed = false;
 		try {
-			changed = dao.changeCompositionTitle(compositionId, newTitle);
-			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
+			changed = tryChangeCompositionTitle(compositionId, newTitle, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeCompositionTitle(long compositionId, String newTitle, SessionRequestContent content) throws DaoException {
+		CompositionsDao dao = DaoFactory.getCompositionsDao();
+		boolean changed = dao.changeCompositionTitle(compositionId, newTitle);
 		if (changed){
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
 			Composition composition = (Composition) content.getCurrentPageAttribute(AttributeName.COMPOSITION.toString());
 			composition.setCompositionTitle(newTitle);
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		return changed;
 	}

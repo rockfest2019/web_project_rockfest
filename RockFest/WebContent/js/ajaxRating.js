@@ -1,10 +1,10 @@
 var url = 'http://localhost:8080/RockFest/RockFest';
 var elementsCount = 5;
-var parameters = 'ver=9&elementsCount=' + elementsCount;
+var parameters = 'vers=13&elementsCount=' + elementsCount;
 
 function compositionRating(){
-	document.getElementById('prev').style.display = 'block';
-	document.getElementById('next').style.display = 'block';
+	document.getElementById('prev').style.display = 'inline-block';
+	document.getElementById('next').style.display = 'inline-block';
 	var commandParameter = 'command=compositions_ratings_ajax';
 	var ratingTypeParameter = 'ratingType=general';
 	var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
@@ -15,8 +15,8 @@ function compositionRating(){
 }
 
 function singerRating(){
-	document.getElementById('prev').style.display = 'block';
-	document.getElementById('next').style.display = 'block';
+	document.getElementById('prev').style.display = 'inline-block';
+	document.getElementById('next').style.display = 'inline-block';
 	var commandParameter = 'command=singers_ratings_ajax';
 	var ratingTypeParameter = 'ratingType=general';
 	var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
@@ -27,8 +27,8 @@ function singerRating(){
 }
 
 function genreRating(){
-	document.getElementById('prev').style.display = 'block';
-	document.getElementById('next').style.display = 'block';
+	document.getElementById('prev').style.display = 'inline-block';
+	document.getElementById('next').style.display = 'inline-block';
 	var commandParameter = 'command=genres_ratings_ajax';
 	var ratingTypeParameter = 'ratingType=general';
 	var urlWithParameters = url + '?' + parameters + '&' + commandParameter + '&' + ratingTypeParameter;
@@ -44,7 +44,7 @@ function next (){
 	var end = document.getElementById('end').value;
 	if (end == 'false'){
 		urlWithParameters = urlWithParameters + '&'+ position;
-		document.getElementById('prev').style.display = 'block';
+		document.getElementById('prev').style.display = 'inline-block';
 		ajax(urlWithParameters);
 	} else {
 		document.getElementById('next').style.display = 'none';
@@ -60,7 +60,7 @@ function prev (){
 		newPosition = newPosition - elementsCount*2;
 		position = 'position=' + newPosition;
 		urlWithParameters = urlWithParameters + '&'+ position;
-		document.getElementById('next').style.display = 'block';
+		document.getElementById('next').style.display = 'inline-block';
 		ajax(urlWithParameters);
 	} else {
 		document.getElementById('prev').style.display = 'none';

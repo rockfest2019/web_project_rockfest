@@ -39,7 +39,8 @@ public enum AttributeName {
 	RATING_END("rating_end"),
 	AJAX_COMMAND("ajax_command"),
 	ENTITIES("entities"),
-	DATE("date")
+	DATE("date"),
+	ELEMENTS_COUNT("elements_count")
 	;
 
 	private String name;

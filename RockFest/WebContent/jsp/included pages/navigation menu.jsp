@@ -5,16 +5,36 @@
 <html>
 <script type="text/javascript" src="${pageContext.request.contextPath }/js/navigation menu.js"></script>
 <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/navigation menu.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/bootstrap.css">
+<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/common.css">
 <body>
 
 	<c:set var="root" value="${pageContext.request.contextPath }"></c:set>
 	<c:set var="login_failure" value="${current_page_attributes['login_failure'] }"></c:set>
 	<c:set var="search_error" value="${current_page_attributes['search_error'] }"></c:set>
-	<nav>
+
+	<nav class="navigation">
 		<fmt:requestEncoding value = "UTF-8" />
 		<c:if test="${empty locale }"> <fmt:setLocale value="en_US"/></c:if>
 		<c:if test="${not empty locale }"> <fmt:setLocale value="${locale }"/></c:if>
-		<fmt:setBundle basename="language"/>
+		<br>
+		<section class="inline"><section class="searchForm">
+			<form action = "${root }/RockFest" class="searchForm">
+				<section id="searchFeature" class ="searchFeature">
+					<input type="radio" required name="command" value="entities_search" checked="checked"><fmt:message key="all"/>
+					<input type="radio" required name="command" value="compositions_search"><fmt:message key="compositions"/>
+					<input type="radio" required name="command" value="genres_search"><fmt:message key="genres"/>
+					<input type="radio" required name="command" value="singers_search"><fmt:message key="singers"/>
+				</section>
+				<input type="text" name="searchPattern" required maxlength="100">
+				<input type="submit" value=<fmt:message key="search"/>>
+			</form>
+			<button id="extendedSearch" class="extendedSearch" onclick="extendedSearch();">Extended</button>
+			<section class="error_message"><c:out value="${search_error }"></c:out></section>
+		</section></section>
+
+
+		<section class="inline"><fmt:setBundle basename="language"/>
 		<form action = "${root }/RockFest">
 			<select name="locale">
 				<option selected value="en_US">English</option>
@@ -23,7 +43,7 @@
 			<input name="command" value="change_locale" hidden/>
 			<input type="submit" value=<fmt:message key="change_locale"/>>
 		</form>
-		<section>
+		</section>
 		<section class="error_message"><c:out value="${login_failure }"></c:out></section>
 			<c:if test="${not empty user_id }">
 					<form action = "${root }/RockFest" method="post" class="profileLink">
@@ -44,34 +64,20 @@
 					<input type="password" id="password" name="password" required maxlength="20">
 					<input type="submit" value=<fmt:message key="login"/>>
 				</form>
-				<button id="forgotPasswordButton" class="forgotPasswordButton" onclick="forgotPassword();">Forgot password</button>
+				<button id="forgotPasswordButton" class="forgotPasswordButton" onclick="forgotPassword();"><fmt:message key="forgot_password"/></button>
 				<form action = "${root }/RockFest" method="post" id="forgotPasswordForm" class="forgotPasswordForm">
-					Send password to email:<br>
+					<fmt:message key="send_password_to_email"/>:<br>
 					<input name="command" value="send_password_to_email" hidden>
 					<label for="login"><fmt:message key="login"/></label>
 					<input type="text" id="login" name="userLogin" required maxlength="45">
 					<input type="submit" value=<fmt:message key="send_password_to_email"/>>
 				</form>
-				<a class="registrationLink" href="${root }/jsp/user/registration.jsp">Registration</a>
+				<a class="registrationLink" href="${root }/jsp/user/registration.jsp"><fmt:message key="registration"/></a>
 			</c:if>
-		</section>
-		<section class="searchForm">
-			Search
-			<form action = "${root }/RockFest" class="searchForm">
-				<section id="searchFeature" class ="searchFeature">
-					<input type="radio" required name="command" value="entities_search" checked="checked">All
-					<input type="radio" required name="command" value="compositions_search">Compositions
-					<input type="radio" required name="command" value="genres_search">Genres
-					<input type="radio" required name="command" value="singers_search">Singers
-				</section>
-				<input type="text" name="searchPattern" required maxlength="100">
-				<input type="submit" value="Search">
-			</form>
-			<button id="extendedSearch" class="extendedSearch" onclick="extendedSearch();">Extended</button>
-			<section class="error_message"><c:out value="${search_error }"></c:out></section>
-		</section>
 		<br>
 		<form action="${root }/RockFest">
+			<input type="number" name="position" value="0" hidden>
+			<input type="number" name="elementsCount" value="5" hidden>
 			<button name="command" value="find_all_compositions"><fmt:message key="compositions"/></button>
 			<button name="command" value="find_all_singers"><fmt:message key="singers"/></button>
 			<button name="command" value="find_all_genres"><fmt:message key="genres"/></button>

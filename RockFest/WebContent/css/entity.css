@@ -13,3 +13,27 @@
 .yearChangeForm{
 	display: none;
 }
+.entity{
+	background: rgba(208, 241, 242,.1);
+	margin: 5px;
+	padding: 10px;
+	border: 1px inset #000;
+}
+.entities{
+	margin: 3px;
+	border: 1px dashed #000;
+}
+.comments{
+	margin: 3px;
+	border: 1px groove #000;
+}
+.comment{
+	background: rgba(230, 242, 242,.5);
+	border: 1px groove #000;
+}
+.new_rating{
+	background: rgba(1, 12, 13,.5);
+}
+.description{
+	background: rgba(250, 252, 252,.6);
+}

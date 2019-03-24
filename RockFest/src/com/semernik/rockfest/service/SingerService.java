@@ -77,19 +77,24 @@ public class SingerService {
 	 * @return true, if successful
 	 */
 	public boolean findSingers(SessionRequestContent content){
-		SingersDao dao = DaoFactory.getSingersDao();
-		Collection<Singer> singers = null;
-		boolean found = true;
+		int position = Integer.parseInt(content.getParameter(ParameterName.POSITION.toString()));
+		int elementsCount = Integer.parseInt(content.getParameter(ParameterName.ELEMENTS_COUNT.toString()));
+		boolean found = false;
 		try {
-			singers = dao.findAllSingers();
+			found = tryFindSingers(position, elementsCount, content);
 		} catch (DaoException e) {
-			found = true;
 			logger.error("Singers are not reachable", e);
 		}
-		if (found){
-			content.addRequestAttribute(AttributeName.SINGERS.toString(), singers);
-		}
 		return found;
+	}
+
+	private boolean tryFindSingers(int position, int elementsCount, SessionRequestContent content) throws DaoException {
+		SingersDao dao = DaoFactory.getSingersDao();
+		Collection<Singer> singers = dao.findSingers(position, elementsCount);
+		content.addRequestAttribute(AttributeName.SINGERS.toString(), singers);
+		content.addRequestAttribute(AttributeName.POSITION.toString(), position);
+		content.addRequestAttribute(AttributeName.ELEMENTS_COUNT.toString(), elementsCount);
+		return true;
 	}
 
 	/**
@@ -109,23 +114,29 @@ public class SingerService {
 			logger.error("Singer is not reachable", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SINGER_ERROR, content);
 		}
-		boolean found = false;
+		return tryAddSingerToContent(optional, content);
+	}
+
+	private boolean tryAddSingerToContent(Optional<Singer> optional, SessionRequestContent content) {
+		boolean added = false;
 		if (optional.isPresent()){
-			found = true;
-			content.addRequestAttribute(AttributeName.SINGER.toString(), optional.get());
-			addSingerComments(singerId, content);
+			Singer singer = optional.get();
+			content.addRequestAttribute(AttributeName.SINGER.toString(), singer);
+			addSingerComments(singer.getSingerId(), content);
+			if (content.getSessionAttribute(AttributeName.USER_ID.toString()) != null){
+				addUserSingerRatings(content);
+			}
+			added = true;
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SINGER_ERROR, content);
 		}
-		if (content.getSessionAttribute(AttributeName.USER_ID.toString()) != null){
-			addUserSingerRatings(content);
-		}
-		return found;
+		return added;
 	}
 
 	private void addSingerComments(long singerId, SessionRequestContent content) {
 		CommentsDao commentsDao = DaoFactory.getCommentsDao();
-		Collection<Comment> comments = null;
 		try {
-			comments = commentsDao.findSingerCommentsBySingerId(singerId);
+			Collection<Comment> comments = commentsDao.findSingerCommentsBySingerId(singerId);
 			content.addRequestAttribute(AttributeName.COMMENTS.toString(), comments);
 			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
 		} catch (DaoException e) {
@@ -156,38 +167,53 @@ public class SingerService {
 		Long singerId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		String newDescription = content.getParameter(ParameterName.DESCRIPTION.toString());
 		Long userId = (Long)content.getSessionAttribute(AttributeName.USER_ID.toString());
-		SingersDao dao = DaoFactory.getSingersDao();
 		boolean updated = false;
 		try {
-			updated = dao.updateSingerDescription(singerId, newDescription, userId);
-			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_DESCRIPTION_ERROR.toString());
+			updated = tryUpdateSingerDescription(singerId, newDescription, userId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_DESCRIPTION_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return updated;
+	}
+
+	private boolean tryUpdateSingerDescription(Long singerId, String newDescription, Long userId,
+			SessionRequestContent content) throws DaoException{
+		SingersDao dao = DaoFactory.getSingersDao();
+		boolean updated = dao.updateSingerDescription(singerId, newDescription, userId);
 		if (updated){
 			Singer singer = (Singer) content.getCurrentPageAttribute(AttributeName.SINGER.toString());
 			singer.setDescription(newDescription);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_DESCRIPTION_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_DESCRIPTION_ERROR, content);
 		}
 		return updated;
 	}
 
 	public boolean deleteSingerComment(SessionRequestContent content){
 		long commentId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
-		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean deleted = false;
 		try {
-			deleted = dao.deleteSingerComment(commentId);
-			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+			deleted = tryDeleteSingerComment(commentId, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return deleted;
+	}
+
+	private boolean tryDeleteSingerComment(long commentId, SessionRequestContent content) throws DaoException{
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean deleted = dao.deleteSingerComment(commentId);
 		if (deleted){
 			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.removeIf(a -> a.getCommentId() == commentId);
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.DELETE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		return deleted;
 	}
@@ -195,19 +221,26 @@ public class SingerService {
 	public boolean changeSingerTitle(SessionRequestContent content){
 		long singerId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		String newTitle = content.getParameter(ParameterName.TITLE.toString());
-		SingersDao dao = DaoFactory.getSingersDao();
 		boolean changed = false;
 		try {
-			changed = dao.changeSingerTitle(singerId, newTitle);
-			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
+			changed = tryChangeSingerTitle(singerId, newTitle, content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeSingerTitle(long singerId, String newTitle, SessionRequestContent content) throws DaoException{
+		SingersDao dao = DaoFactory.getSingersDao();
+		boolean changed = dao.changeSingerTitle(singerId, newTitle);
 		if (changed){
 			Singer singer = (Singer) content.getCurrentPageAttribute(AttributeName.SINGER.toString());
 			singer.setTitle(newTitle);
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		return changed;
 	}
@@ -220,19 +253,26 @@ public class SingerService {
 	 */
 	public boolean saveSingerComment(SessionRequestContent content){
 		Comment comment = EntityUtil.getEntityCommentFromContent(content);
-		CommentsDao dao = DaoFactory.getCommentsDao();
 		boolean saved = false;
 		try {
-			saved = dao.saveSingerComment(comment);
-			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+			saved = trySaveSingerComment(comment, content);
 		} catch (DaoException e) {
 			logger.error("Comment is not saved ", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return saved;
+	}
+
+	private boolean trySaveSingerComment(Comment comment, SessionRequestContent content) throws DaoException{
+		CommentsDao dao = DaoFactory.getCommentsDao();
+		boolean saved = dao.saveSingerComment(comment);
 		if (saved){
 			Collection<Comment> comments = (Collection<Comment>) content.getCurrentPageAttribute(AttributeName.COMMENTS.toString());
 			comments.add(comment);
+			content.removeCurrentPageAttribute(ErrorMessage.COMMENTS_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.SAVE_COMMENT_ERROR, ErrorMessage.COMMENTS_FAILURE, content);
 		}
 		return saved;
 	}

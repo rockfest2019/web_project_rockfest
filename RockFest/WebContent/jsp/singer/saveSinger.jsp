@@ -10,7 +10,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title><fmt:message key="new_singer"/></title>
 </head>
-<body>
+<body class="common_background">
 	<header><fmt:message key="new_singer"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
@@ -24,8 +24,8 @@
 			<p><b><fmt:message key="description"/></b></p>
 			<textarea required name="description" cols="60" rows="10" maxlength="65535"></textarea>
 			<p>
-				<input type="submit" value="save">
-				<input type="reset" value="reset">
+				<input type="submit" value=<fmt:message key="save"/>>
+				<input type="reset" value=<fmt:message key="reset"/>>
 			</p>
 		</form>
 	</main>

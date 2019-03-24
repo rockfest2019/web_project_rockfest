@@ -3,6 +3,7 @@ package com.semernik.rockfest.util;
 import java.util.Collection;
 import java.util.List;
 
+import com.semernik.rockfest.container.LocalizedMessagesContainer;
 import com.semernik.rockfest.entity.EntityRating;
 import com.semernik.rockfest.entity.Genre;
 import com.semernik.rockfest.type.CommandType;
@@ -31,8 +32,7 @@ public class AjaxUtil {
 	private static final String COMMAND_INPUT = "<input type='text' name='command' value='";
 	private static final String HTML_H_3 = "<h3>";
 	private static final String HTML_H_3_CLOSE = "</h3>";
-	private static final String SUBMIT_INPUT = "<input type='submit' name='command' value='";
-	private static final String RATING = "_rating'>";
+	private static final String SUBMIT_INPUT = "<input type='submit' value='";
 	private static final String BG_RATING_SECTION = "<section class='rating_bg'>";
 	private static final String RATING_SECTION = "<section class='rating'>";
 	private static final String SECTION = "<section>";
@@ -44,6 +44,7 @@ public class AjaxUtil {
 	private static final String HTML_B_CLOSE = "</b>";
 	private static final String HTML_P = "<p>";
 	private static final String HTML_P_CLOSE = "</p>";
+	private static final String GENRES_ID_INPUT = "<input type='checkbox' name='genresIds' value='";
 
 
 	private AjaxUtil(){}
@@ -64,14 +65,14 @@ public class AjaxUtil {
 	 * @return the string
 	 */
 	public String generateHTMLRatings(String entityType, String comparatorType, List<EntityRating> ratings, int position,
-			int elementsCount){
+			int elementsCount, String locale){
 		StringBuilder builder = new StringBuilder();
 		addPosition(builder, position, elementsCount, ratings.size());
-		addHeader(entityType, comparatorType, builder);
+		addHeader(entityType, comparatorType, builder, locale);
 		RatingUtil ratingUtil = RatingUtil.getInstance();
 		String ratingCommand = ratingUtil.findRatingCommand(entityType);
 		String entityCommand = ratingUtil.findEntityCommand(entityType);
-		addRatings(ratings, builder, entityCommand, ratingCommand);
+		addRatings(ratings, builder, entityCommand, ratingCommand, locale);
 		return builder.toString();
 	}
 
@@ -97,10 +98,13 @@ public class AjaxUtil {
 
 	}
 
-	private void addHeader(String entityType, String comparatorType, StringBuilder builder) {
-		String comparatorMessage = RatingType.valueOf(comparatorType.toUpperCase()).toString();
+	private void addHeader(String entityType, String comparatorType, StringBuilder builder, String locale) {
+		RatingType ratingType = RatingType.valueOf(comparatorType.toUpperCase());
+		String comparatorMessageKey = ratingType.getMessageKey();
+		String comparatorMessage = LocalizedMessagesContainer.getLocalizedMessageByKey(comparatorMessageKey, locale);
+		String entityMessage = LocalizedMessagesContainer.getLocalizedMessageByKey(entityType, locale);
 		builder.append(HTML_H_2);
-		builder.append(entityType);
+		builder.append(entityMessage);
 		builder.append(HTML_H_2_CLOSE);
 		builder.append(HTML_H_2);
 		builder.append(comparatorMessage);
@@ -108,17 +112,18 @@ public class AjaxUtil {
 		builder.append(NEW_LINE);
 	}
 
-	private void addRatings(List<EntityRating> ratings, StringBuilder builder, String entityCommand, String ratingCommand) {
+	private void addRatings(List<EntityRating> ratings, StringBuilder builder, String entityCommand, String ratingCommand,
+			String locale) {
 		for (EntityRating rating : ratings){
-			addRating(rating, builder, entityCommand, ratingCommand);
+			addRating(rating, builder, entityCommand, ratingCommand, locale);
 		}
 	}
 
-	private void addRating(EntityRating rating, StringBuilder builder, String entityCommand, String ratingCommand) {
+	private void addRating(EntityRating rating, StringBuilder builder, String entityCommand, String ratingCommand, String locale) {
 		addTitle(rating.getEntityTitle(), rating.getEntityId(), entityCommand, builder);
 		addRatingBackgroundSectionStart(builder);
-		addRatingSections(rating, ratingCommand, builder);
-		addVotedUsersCount(rating.getVotedUsersCount(), builder);
+		addRatingSections(rating, ratingCommand, builder, locale);
+		addVotedUsersCount(rating.getVotedUsersCount(), builder, locale);
 		addSectionEnd(builder);
 		builder.append(HTML_NEW_LINE);
 	}
@@ -130,25 +135,26 @@ public class AjaxUtil {
 		addFormEnd(builder);
 	}
 
-	private void addRatingSections(EntityRating rating, String ratingCommand, StringBuilder builder) {
-		addRatingSection(RatingType.GENERAL.name().toLowerCase(), rating.getRating(), ratingCommand, builder);
-		addRatingSection(RatingType.MELODY.name().toLowerCase(), rating.getMelodyRating(), ratingCommand, builder);
-		addRatingSection(RatingType.TEXT.name().toLowerCase(), rating.getTextRating(), ratingCommand, builder);
-		addRatingSection(RatingType.MUSIC.name().toLowerCase(), rating.getMusicRating(), ratingCommand, builder);
-		addRatingSection(RatingType.VOCAL.name().toLowerCase(), rating.getVocalRating(), ratingCommand, builder);
+	private void addRatingSections(EntityRating rating, String ratingCommand, StringBuilder builder, String locale) {
+		addRatingSection(RatingType.GENERAL, rating.getRating(), ratingCommand, builder, locale);
+		addRatingSection(RatingType.MELODY, rating.getMelodyRating(), ratingCommand, builder, locale);
+		addRatingSection(RatingType.TEXT, rating.getTextRating(), ratingCommand, builder, locale);
+		addRatingSection(RatingType.MUSIC, rating.getMusicRating(), ratingCommand, builder, locale);
+		addRatingSection(RatingType.VOCAL, rating.getVocalRating(), ratingCommand, builder, locale);
 
 	}
 
-	private void addRatingSection(String ratingType, double rating, String ratingCommand, StringBuilder builder) {
+	private void addRatingSection(RatingType ratingType, double rating, String ratingCommand, StringBuilder builder, String locale) {
 		addRatingSectionStart(builder);
 		addFormStart(builder);
-		builder.append(RATING_TYPE_INPUT + ratingType + HIDDEN);
+		builder.append(RATING_TYPE_INPUT + ratingType.name().toLowerCase() + HIDDEN);
 		builder.append(NEW_LINE);
 		builder.append(COMMAND_INPUT + ratingCommand + HIDDEN);
 		builder.append(NEW_LINE);
 		builder.append(SUBMIT_INPUT);
-		builder.append(ratingType);
-		builder.append(RATING);
+		String ratingMessage = LocalizedMessagesContainer.getLocalizedMessageByKey(ratingType.getMessageKey(), locale);
+		builder.append(ratingMessage);
+		builder.append(BRACKET_CLOSE);
 		builder.append(HTML_H_3);
 		builder.append(rating);
 		builder.append(HTML_H_3_CLOSE);
@@ -174,11 +180,13 @@ public class AjaxUtil {
 		builder.append(SECTION_CLOSE);
 	}
 
-	private void addVotedUsersCount(int votedUsersCount, StringBuilder builder) {
+	private void addVotedUsersCount(int votedUsersCount, StringBuilder builder, String locale) {
 		addSectionStart(builder);
 		builder.append(HTML_H_2);
 		builder.append(HTML_B);
-		builder.append("Voted users count");
+		String messageKey = LocalizedMessageKey.VOTED_USERS_COUNT.toString().toLowerCase();
+		String message = LocalizedMessagesContainer.getLocalizedMessageByKey(messageKey, locale);
+		builder.append(message);
 		builder.append(HTML_B_CLOSE);
 		builder.append(HTML_P);
 		builder.append(votedUsersCount);
@@ -205,42 +213,35 @@ public class AjaxUtil {
 
 	private static enum RatingType {
 
-		GENERAL("General rating"),
-		MELODY("Melody rating"),
-		TEXT("Text rating"),
-		MUSIC("Music rating"),
-		VOCAL("Vocal rating")
+		GENERAL("rating"),
+		MELODY("melody_rating"),
+		TEXT("text_rating"),
+		MUSIC("music_rating"),
+		VOCAL("vocal_rating")
 		;
 
-		private String message;
+		private String messageKey;
 
 
 		RatingType(String message){
-			this.message = message;
+			this.messageKey = message;
 		}
 
-		/* (non-Javadoc)
-		 * @see java.lang.Enum#toString()
-		 */
-		@Override
-		public String toString(){
-			return message;
+
+		public String getMessageKey(){
+			return messageKey;
 		}
 	}
 
 
 	private static enum LocalizedMessageKey {
 
-		RATING,
-		MELODY_RATING,
-		TEXT_RATING,
-		MUSIC_RATING,
-		VOCAL_RATING,
 		VOTED_USERS_COUNT,
+		SAVE_GENRES,
 
 	}
 
-	public String generateHTMLGenresForComposition(long compositionId, Collection<Genre> genres) {
+	public String generateHTMLGenresForComposition(long compositionId, Collection<Genre> genres, String locale) {
 		StringBuilder builder = new StringBuilder();
 		addSectionStart(builder);
 		addPostFormStart(builder);
@@ -250,9 +251,10 @@ public class AjaxUtil {
 		builder.append(ID_INPUT);
 		builder.append(compositionId);
 		builder.append(HIDDEN);
-		builder.append("<input type='text' name='test' value='testValue' hidden>\n");
 		addGenresForComposition(genres, builder);
-		addSubmit("save genres", builder);
+		String messageKey = LocalizedMessageKey.SAVE_GENRES.toString().toLowerCase();
+		String saveGenres = LocalizedMessagesContainer.getLocalizedMessageByKey(messageKey, locale);
+		addSubmit(saveGenres, builder);
 		builder.append(NEW_LINE);
 		addFormEnd(builder);
 		addSectionEnd(builder);
@@ -268,7 +270,7 @@ public class AjaxUtil {
 	}
 
 	private void addGenreForComposition(Genre genre, StringBuilder builder) {
-		builder.append("<input type='checkbox' name='genresIds' value='");
+		builder.append(GENRES_ID_INPUT);
 		builder.append(genre.getGenreId());
 		builder.append(BRACKET_CLOSE);
 		builder.append(genre.getTitle());
@@ -277,9 +279,9 @@ public class AjaxUtil {
 	}
 
 	private void addSubmit(String value, StringBuilder builder) {
-		builder.append("<input type='submit' value='");
+		builder.append(SUBMIT_INPUT);
 		builder.append(value);
-		builder.append("'>");
+		builder.append(BRACKET_CLOSE);
 	}
 
 }

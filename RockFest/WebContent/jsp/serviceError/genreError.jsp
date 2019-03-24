@@ -14,7 +14,7 @@
 	<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>
 	<header><fmt:message key="genre_error"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
-	<main>
+	<main class="common_background">
 		<h1><fmt:message key="genre_error"/></h1>
 		<h2><c:out value="${error_message }"></c:out></h2>
 	</main>

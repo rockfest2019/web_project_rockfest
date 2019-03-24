@@ -1,4 +1,4 @@
-package com.semernik.rockfest.controller;
+package com.semernik.rockfest.filter;
 
 import java.io.IOException;
 

@@ -66,10 +66,31 @@ public interface CommentsDao extends Dao{
 	 */
 	boolean saveGenreComment (Comment comment) throws DaoException;
 
+	/**
+	 * Delete composition comment.
+	 *
+	 * @param comment the comment
+	 * @return true, if successful
+	 * @throws DaoException the dao exception
+	 */
 	boolean deleteCompositionComment(long commentId) throws DaoException;
 
+	/**
+	 * Delete singer comment.
+	 *
+	 * @param comment the comment
+	 * @return true, if successful
+	 * @throws DaoException the dao exception
+	 */
 	boolean deleteSingerComment(long commentId) throws DaoException;
 
+	/**
+	 * Delete genre comment.
+	 *
+	 * @param comment the comment
+	 * @return true, if successful
+	 * @throws DaoException the dao exception
+	 */
 	boolean deleteGenreComment(long commentId) throws DaoException;
 
 }

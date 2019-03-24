@@ -183,42 +183,84 @@ public class SessionRequestContent {
 		this.sendingMethod = sendingMethod;
 	}
 
+	/**
+	 * Sets the request parameters.
+	 *
+	 * @param requestParameters the new request parameters
+	 */
 	public void setRequestParameters(Map<String, String[]> requestParameters) {
 		this.requestParameters = requestParameters;
 	}
 
+	/**
+	 * Sets the session attributes.
+	 *
+	 * @param sessionAttributes the new session attributes
+	 */
 	public void setSessionAttributes(Map<String, Object> sessionAttributes) {
 		this.sessionAttributes = sessionAttributes;
 	}
 
+	/**
+	 * Adds the request attribute.
+	 *
+	 * @param name the name of attribute
+	 * @param value the value of attribute
+	 */
 	public void addRequestAttribute(String name, Object value){
 		requestAttributes.put(name, value);
 	}
 
+	/**
+	 * Adds the current page attribute.
+	 *
+	 * @param name the name of attribute
+	 * @param value the value of attribute
+	 */
 	public void addCurrentPageAttribute(String name, Object value){
 		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
 		currentPageAttributes.put(name, value);
 	}
 
+	/**
+	 * Gets the request attribute.
+	 *
+	 * @param name the name of attribute
+	 */
 	public Object getCurrentPageAttribute(String name){
 		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
 		return currentPageAttributes.get(name);
 	}
 
+	/**
+	 * Gets the current page attribute.
+	 *
+	 * @param name the name of attribute
+	 */
 	public void removeCurrentPageAttribute(String name){
 		Map<String, Object> currentPageAttributes = this.getCurrentPageAttributes();
 		currentPageAttributes.remove(name);
 	}
 
+	/**
+	 * Gets the request parameter.
+	 *
+	 * @param name the name of parameter
+	 */
 	public String getParameter(String name){
-		String [] parameters = requestParameters.get(name);
 		String parameter = EMPTY_PARAMETER;
+		String [] parameters = requestParameters.get(name);
 		if (parameters != null && parameters.length >0){
 			parameter = parameters[0];
 		}
 		return parameter;
 	}
 
+	/**
+	 * Gets the request parameters.
+	 *
+	 * @param name the name of parameters
+	 */
 	public String[] getParameters(String name){
 		String [] parameters = requestParameters.get(name);
 		if (parameters == null ){
@@ -227,10 +269,21 @@ public class SessionRequestContent {
 		return parameters;
 	}
 
+	/**
+	 * Gets the session attribute.
+	 *
+	 * @param name the name of attribute
+	 */
 	public Object getSessionAttribute(String name){
 		return sessionAttributes.get(name);
 	}
 
+	/**
+	 * Adds the session attribute.
+	 *
+	 * @param name the name of attribute
+	 * @param value the value of attribute
+	 */
 	public void addSessionAttribute(String name, Object value){
 		sessionAttributes.put(name, value);
 	}

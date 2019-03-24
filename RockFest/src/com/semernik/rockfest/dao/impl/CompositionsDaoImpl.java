@@ -18,7 +18,6 @@ import com.semernik.rockfest.entity.Composition;
 import com.semernik.rockfest.entity.Composition.CompositionBuilder;
 import com.semernik.rockfest.entity.Genre;
 import com.semernik.rockfest.entity.Genre.GenreBuilder;
-import com.semernik.rockfest.entity.Link;
 
 public class CompositionsDaoImpl implements CompositionsDao{
 
@@ -38,7 +37,6 @@ public class CompositionsDaoImpl implements CompositionsDao{
 		Connection con = null;
 		Composition composition = null;
 		Collection<Genre> genres = new LinkedList<>();
-		Collection<Link> links = new LinkedList<>();
 		PreparedStatement st = null;
 		ResultSet result = null;
 		try {
@@ -46,36 +44,37 @@ public class CompositionsDaoImpl implements CompositionsDao{
 			st = con.prepareStatement(Query.FIND_COMPOSITION_BY_ID.toString());
 			st.setLong(1, compositionId);
 			result = st.executeQuery();
-			result.next();
-			CompositionBuilder builder = new CompositionBuilder();
-			builder.compositionTitle(result.getString(ColumnName.COMPOSITION_TITLE.toString()))
-					.compositionId(compositionId)
-					.year(result.getString(ColumnName.YEAR.toString()))
-					.addingDate(result.getDate(ColumnName.COMPOSITION_ADDING_DATE.toString()))
-					.melodyRating(result.getInt(ColumnName.MELODY_RATING.toString()))
-					.textRating(result.getInt(ColumnName.TEXT_RATING.toString()))
-					.musicRating(result.getInt(ColumnName.MUSIC_RATING.toString()))
-					.vocalRating(result.getInt(ColumnName.VOCAL_RATING.toString()))
-					.votedUsersCount(result.getInt(ColumnName.VOTED_USERS_COUNT.toString()))
-					.authorId(result.getLong(ColumnName.AUTHOR_ID.toString()))
-					.yearEditorId(result.getLong(ColumnName.YEAR_EDITOR_ID.toString()))
-					.genreEditorId(result.getLong(ColumnName.GENRE_EDITOR_ID.toString()))
-					.author(result.getString(ColumnName.AUTHOR.toString()))
-					.yearEditor(result.getString(ColumnName.YEAR_EDITOR.toString()))
-					.genreEditor(result.getString(ColumnName.COMPOSITION_TITLE.toString()))
-					.singerId(result.getLong(ColumnName.SINGER_ID.toString()))
-					.singerTitle(result.getString(ColumnName.SINGER.toString()));
-			st = con.prepareStatement(Query.FIND_COMPOSITION_GENRES_BY_ID.toString());
-			st.setLong(1, compositionId);
-			result = st.executeQuery();
-			while (result.next()){
-				GenreBuilder genreBuilder = new GenreBuilder();
-				Genre genre = genreBuilder.genreId(result.getLong(1))
-						.title( result.getString(2))
-						.build();
-				genres.add(genre);
+			if (result.next()){
+				CompositionBuilder builder = new CompositionBuilder();
+				builder.compositionTitle(result.getString(ColumnName.COMPOSITION_TITLE.toString()))
+						.compositionId(compositionId)
+						.year(result.getString(ColumnName.YEAR.toString()))
+						.addingDate(result.getDate(ColumnName.COMPOSITION_ADDING_DATE.toString()))
+						.melodyRating(result.getInt(ColumnName.MELODY_RATING.toString()))
+						.textRating(result.getInt(ColumnName.TEXT_RATING.toString()))
+						.musicRating(result.getInt(ColumnName.MUSIC_RATING.toString()))
+						.vocalRating(result.getInt(ColumnName.VOCAL_RATING.toString()))
+						.votedUsersCount(result.getInt(ColumnName.VOTED_USERS_COUNT.toString()))
+						.authorId(result.getLong(ColumnName.AUTHOR_ID.toString()))
+						.yearEditorId(result.getLong(ColumnName.YEAR_EDITOR_ID.toString()))
+						.genreEditorId(result.getLong(ColumnName.GENRE_EDITOR_ID.toString()))
+						.author(result.getString(ColumnName.AUTHOR.toString()))
+						.yearEditor(result.getString(ColumnName.YEAR_EDITOR.toString()))
+						.genreEditor(result.getString(ColumnName.GENRE_EDITOR.toString()))
+						.singerId(result.getLong(ColumnName.SINGER_ID.toString()))
+						.singerTitle(result.getString(ColumnName.SINGER.toString()));
+				st = con.prepareStatement(Query.FIND_COMPOSITION_GENRES_BY_ID.toString());
+				st.setLong(1, compositionId);
+				result = st.executeQuery();
+				while (result.next()){
+					GenreBuilder genreBuilder = new GenreBuilder();
+					Genre genre = genreBuilder.genreId(result.getLong(1))
+							.title( result.getString(2))
+							.build();
+					genres.add(genre);
+				}
+				composition = builder.genres(genres).build();
 			}
-			composition = builder.genres(genres).build();
 		} catch (SQLException e) {
 			composition = null;
 			throw new DaoException("Failed to find composition by id", e);
@@ -159,14 +158,16 @@ public class CompositionsDaoImpl implements CompositionsDao{
 	}
 
 	@Override
-	public Collection<Composition> findAllCompositions() throws DaoException {
+	public Collection<Composition> findCompositions(int position, int elementsCount) throws DaoException {
 		Connection con = null;
 		Collection<Composition> compositions = new LinkedList<>();
 		PreparedStatement st = null;
 		ResultSet result = null;
 		try {
 			con = ConnectionPool.getInstance().takeConnection();
-			st = con.prepareStatement(Query.FIND_ALL_COMPOSITIONS.toString());
+			st = con.prepareStatement(Query.FIND_COMPOSITIONS.toString());
+			st.setInt(1, position);
+			st.setInt(2, elementsCount);
 			result = st.executeQuery();
 			while (result.next()){
 				CompositionBuilder builder = new CompositionBuilder();
@@ -402,8 +403,8 @@ public class CompositionsDaoImpl implements CompositionsDao{
 				+ "USING (genreId) WHERE compositionId=?;"),
 		FIND_COMPOSITION_LINKS ("SELECT linkId, content, date, authorId, login FROM CompositionLinks "
 				+ "JOIN Users ON authorId=userId WHERE compositionId=?;"),
-		FIND_ALL_COMPOSITIONS ("SELECT compositionId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount "
-				+ "FROM compositions;"),
+		FIND_COMPOSITIONS ("SELECT compositionId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount "
+				+ "FROM compositions LIMIT ?, ?;"),
 		FIND_SINGER_COMPOSITIONS ("SELECT compositionId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount "
 				+ "FROM compositions WHERE singerId=?;"),
 		FIND_GENRE_COMPOSITIONS ("SELECT compositionId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount "

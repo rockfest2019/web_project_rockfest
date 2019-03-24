@@ -13,7 +13,7 @@
 <body>
 	<header><fmt:message key="locale_validation_error"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
-	<main>
+	<main class="common_background">
 		<h1><fmt:message key="locale_validation_error"/></h1>
 	</main>
 </body>

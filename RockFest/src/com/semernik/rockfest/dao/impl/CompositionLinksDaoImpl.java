@@ -73,7 +73,6 @@ public class CompositionLinksDaoImpl implements CompositionLinksDao {
 				saved = true;
 			}
 		} catch (SQLException e) {
-			saved = false;
 			throw new DaoException("Failed to save composition link", e);
 		} finally {
 			closeStatement(st);
@@ -96,7 +95,6 @@ public class CompositionLinksDaoImpl implements CompositionLinksDao {
 				saved = true;
 			}
 		} catch (SQLException e) {
-			saved = false;
 			throw new DaoException("Failed to delete composition link", e);
 		} finally {
 			closeStatement(st);

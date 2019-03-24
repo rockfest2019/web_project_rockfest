@@ -8,3 +8,8 @@
 .hideRatings{
 	display: none;
 }
+.rating_bg{
+	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	border-bottom-color: black;
+}

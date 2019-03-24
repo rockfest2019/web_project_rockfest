@@ -93,7 +93,6 @@ public class UsersDaoImpl implements UsersDao{
 				saved = true;
 			}
 		} catch (SQLException e){
-			saved = false;
 			throw new DaoException("Failed to save user", e);
 		} finally {
 			closeStatement(userSaver);

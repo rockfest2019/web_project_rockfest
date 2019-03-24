@@ -47,18 +47,25 @@ public class RatingService {
 	public boolean saveUserRating(SessionRequestContent content){
 		RatingUtil util = RatingUtil.getInstance();
 		EntityRating rating = util.getUserRatingFromContent(content);
-		RatingDao dao = DaoFactory.getRatingDao();
 		boolean saved = false;
 		try {
-			saved = dao.saveUserRating(rating);
-			content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
+			saved = trySaveUserRating(rating, content);
 		} catch (DaoException e) {
 			logger.error("User rating was not saved ", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
 		}
 		content.setUsingCurrentPage(true);
+		return saved;
+	}
+
+	private boolean trySaveUserRating(EntityRating rating, SessionRequestContent content) throws DaoException {
+		RatingDao dao = DaoFactory.getRatingDao();
+		boolean saved = dao.saveUserRating(rating);
 		if (saved){
 			content.addCurrentPageAttribute(AttributeName.USER_RATING.toString(), rating);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
 		}
 		return saved;
 	}
@@ -103,18 +110,26 @@ public class RatingService {
 	private boolean findUserRating (RatingDaoMethod daoMethod, SessionRequestContent content){
 		long entityId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		Long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
-		Optional<EntityRating> optional = Optional.empty();
 		boolean found = false;
 		try {
-			optional = daoMethod.apply(entityId, userId);
-			found = true;
-			if (optional.isPresent()){
-				EntityRating rating = optional.get();
-				content.getRequestAttributes().put(AttributeName.USER_RATING.toString(), rating);
-				content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
-			}
+			found = tryFindUserRating(daoMethod, entityId, userId, content);
 		} catch (DaoException e) {
 			logger.error("Ratings are not reachable ", e);
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
+		}
+		return found;
+	}
+
+	private boolean tryFindUserRating(RatingDaoMethod daoMethod, long entityId, Long userId, SessionRequestContent content)
+			throws DaoException {
+		Optional<EntityRating> optional = daoMethod.apply(entityId, userId);
+		boolean found = false;
+		if (optional.isPresent()){
+			EntityRating rating = optional.get();
+			content.getRequestAttributes().put(AttributeName.USER_RATING.toString(), rating);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_RATING_ERROR.toString());
+			found = true;
+		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_RATING_ERROR, content);
 		}
 		return found;

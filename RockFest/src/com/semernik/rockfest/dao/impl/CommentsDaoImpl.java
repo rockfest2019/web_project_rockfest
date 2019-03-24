@@ -129,7 +129,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				result = true;
 			}
 		} catch (SQLException e) {
-			result = false;
 			throw new DaoException("Fail to save composition comment", e);
 		} finally {
 			closeStatement(st);
@@ -156,7 +155,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				result = true;
 			}
 		} catch (SQLException e) {
-			result = false;
 			throw new DaoException("Fail to save singer comment", e);
 		} finally {
 			closeStatement(st);
@@ -183,7 +181,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				result = true;
 			}
 		} catch (SQLException e) {
-			result = false;
 			throw new DaoException("Fail to save genre comment", e);
 		} finally {
 			closeStatement(st);
@@ -206,7 +203,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				result = true;
 			}
 		} catch (SQLException e) {
-			result = false;
 			throw new DaoException("Fail to delete composition comment", e);
 		} finally {
 			closeStatement(st);
@@ -229,7 +225,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				deleted = true;
 			}
 		} catch (SQLException e) {
-			deleted = false;
 			throw new DaoException("Fail to delete singer comment", e);
 		} finally {
 			closeStatement(st);
@@ -252,7 +247,6 @@ public class CommentsDaoImpl implements CommentsDao {
 				result = true;
 			}
 		} catch (SQLException e) {
-			result = false;
 			throw new DaoException("Fail to delete genre comment", e);
 		} finally {
 			closeStatement(st);

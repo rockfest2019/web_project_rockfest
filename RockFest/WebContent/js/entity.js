@@ -14,6 +14,8 @@ var showUpdateDescriptionForm = true;
 function displayUpdateDescriptionForm(){
 	if (showUpdateDescriptionForm == true){
 		document.getElementById('descriptionUpdateForm').style.display = "block";
+		var oldDescription = document.getElementById('description').innerText;
+		document.getElementById('update_entity_description').value = oldDescription;
 		showUpdateDescriptionForm = false;
 	} else {
 		document.getElementById('descriptionUpdateForm').style.display = "none";

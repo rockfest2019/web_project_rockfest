@@ -20,17 +20,17 @@
    </session-config>
    <error-page>
 		<exception-type>java.lang.RuntimeException</exception-type>
-		<location>/serviceError/runtimeError.jsp</location>
+		<location>/RockFest/jsp/serviceError/runtimeError.jsp</location>
 	</error-page>
 	<error-page>
 		<error-code>404</error-code>
-		<location>/serviceError/pageNotFound.jsp</location>
+		<location>/RockFest/jsp/serviceError/pageNotFound.jsp</location>
 	</error-page>
 	<error-page>
 		<error-code>500</error-code>
-		<location>/serviceError/pageNotFound.jsp</location>
+		<location>/RockFest/jsp/serviceError/internalError.jsp</location>
 	</error-page>
 	<error-page>
-		<location>/serviceError/pageNotFound.jsp</location>
+		<location>/RockFest/jsp/serviceError/pageNotFound.jsp</location>
 	</error-page>
 </web-app>

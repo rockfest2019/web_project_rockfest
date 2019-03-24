@@ -9,7 +9,7 @@
 <body>
 	<header>Error</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
-	<main>
+	<main class="common_background">
 		Request from ${pageContext.errorData.requestURI} is failed
 		<br/>
 		Servlet name: ${pageContext.errorData.servletName}

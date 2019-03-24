@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
 	<Properties>
-		<Property name = "basePath">${catalina.home}/logs/RockFestLog</Property>
+		<Property name = "basePath">${sys:catalina.home}/logs/RockFestLog</Property>
 	</Properties>
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">

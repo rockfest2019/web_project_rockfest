@@ -38,6 +38,8 @@ public class RequiredParametersContainer {
 			ParameterName.ID));
 	private static final Set<ParameterName> TITLE_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.TITLE,
 			ParameterName.ID));
+	private static final Set<ParameterName> ENTITIES_SEARCH_SET = Collections.unmodifiableSet(EnumSet.of(ParameterName.POSITION,
+			ParameterName.ELEMENTS_COUNT));
 
 	private static final Set<AttributeName> SESSION_USER_SET = Collections.unmodifiableSet(EnumSet.of(AttributeName.USER_ID,
 			AttributeName.USER_LOGIN, AttributeName.ROLE));
@@ -106,6 +108,10 @@ public class RequiredParametersContainer {
 
 	public static Set<ParameterName> getTitleSet() {
 		return TITLE_SET;
+	}
+
+	public static Set<ParameterName> getEntitiesSet() {
+		return ENTITIES_SEARCH_SET;
 	}
 
 	public static Set<AttributeName> getSessionUserSet() {

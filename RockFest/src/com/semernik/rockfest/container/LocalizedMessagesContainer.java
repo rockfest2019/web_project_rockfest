@@ -13,10 +13,11 @@ public class LocalizedMessagesContainer {
 	private static ResourceBundle rus = ResourceBundle.getBundle("language_ru_RU");
 	private static final String DEFAULT_MESSAGE_KEY = "error";
 	private static final String RUS_LOCALE = "ru_RU";
+	private static final String QUESTIONS = "???";
 
 	public static String getLocalizedMessageByKey(String key, String locale){
 		String message = null;
-		if (locale.equals(RUS_LOCALE)){
+		if (locale != null && locale.equals(RUS_LOCALE)){
 			message = getRusMessage(key);
 		} else {
 			message = getEnMessage(key);
@@ -26,24 +27,22 @@ public class LocalizedMessagesContainer {
 
 	private static String getRusMessage(String key) {
 		String message;
-		message = rus.getString(key);
 		try {
 			message = rus.getString(key);
 		} catch (MissingResourceException e) {
-			logger.error("There is no error message for key " + key, e);
-			message = rus.getString(DEFAULT_MESSAGE_KEY);
+			logger.error("There is no message for key " + key, e);
+			message = QUESTIONS + key + QUESTIONS;
 		}
 		return message;
 	}
 
 	private static String getEnMessage(String key) {
 		String message;
-		message = en.getString(key);
 		try {
 			message = en.getString(key);
 		} catch (MissingResourceException e) {
-			logger.error("There is no error message for key " + key, e);
-			message = rus.getString(DEFAULT_MESSAGE_KEY);
+			logger.error("There is no message for key " + key, e);
+			message = QUESTIONS + key + QUESTIONS;
 		}
 		return message;
 	}

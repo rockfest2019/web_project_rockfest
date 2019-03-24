@@ -4,10 +4,10 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Title</title>
+<title>Profile error</title>
 </head>
-<body>
-	<header>Header</header>
+<body class="common_background">
+	<header>Profile error</header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
 		<c:set var="error_message" value="${current_page_attributes['error_message'] }"></c:set>

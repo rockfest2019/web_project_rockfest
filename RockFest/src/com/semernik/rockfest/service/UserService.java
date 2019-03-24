@@ -2,14 +2,13 @@ package com.semernik.rockfest.service;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.semernik.rockfest.container.ErrorMessagesContainer;
+import com.semernik.rockfest.container.LocalizedMessagesContainer;
 import com.semernik.rockfest.controller.SessionRequestContent;
 import com.semernik.rockfest.dao.DaoException;
 import com.semernik.rockfest.dao.DaoFactory;
@@ -33,11 +32,9 @@ public class UserService {
 
 	private static Logger logger = LogManager.getLogger();
 	private static UserService instance = new UserService();
-	private static final String INVALID_PASSWORD = "invalid_password";
-	private static final String OCCUPIED_LOGIN = "occupied_login";
-	private static final String LOGIN_CHANGED = "login was changed";
-	private static final String EMAIL_CHANGED = "email was changed";
-	private static final String PASSWORD_CHANGED = "password was changed";
+	private static final String LOGIN_CHANGED = "login_changed";
+	private static final String EMAIL_CHANGED = "email_changed";
+	private static final String PASSWORD_CHANGED = "password_changed";
 	private static final String USER_BAN = "user is banned until ";
 
 
@@ -55,40 +52,29 @@ public class UserService {
 	 */
 	public boolean loginUser(SessionRequestContent content){
 		String login = content.getParameter(ParameterName.USER_LOGIN.toString());
-		UsersDao dao = DaoFactory.getUsersDao();
-		Optional<User> optional = Optional.empty();
 		boolean logged = false;
 		try {
-			optional = dao.findUserByLogin(login);
-			logged = true;
-			content.removeCurrentPageAttribute(ErrorMessage.LOGIN_FAILURE.toString());
+			logged = tryLoginUser(login, content);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.LOGIN_FAILURE, content);
-		}
-		if (logged && confirmUser(content, optional)){
-			addUserToSessionContent(optional.get(), content);
-		} else {
-			logged = false;
 		}
 		content.setUsingCurrentPage(true);
 		return logged;
 	}
 
-	/**
-	 * Logout user.
-	 *
-	 * @param content the content
-	 * @return true, if successful
-	 */
-	public boolean logoutUser(SessionRequestContent content){
-		Map <String, Object> sessionAttrs = content.getSessionAttributes();
-		sessionAttrs.put(AttributeName.USER_ID.toString(), null);
-		sessionAttrs.put(AttributeName.USER_LOGIN.toString(), null);
-		sessionAttrs.put(AttributeName.ROLE.toString(), null);
-		content.setUsingCurrentPage(true);
-		return true;
+	private boolean tryLoginUser(String login, SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<User> optional = dao.findUserByLogin(login);
+		boolean logged = false;
+		if (confirmUser(content, optional)){
+			addUserToSessionContent(optional.get(), content);
+			logged = true;
+			content.removeCurrentPageAttribute(ErrorMessage.LOGIN_FAILURE.toString());
+		}
+		return logged;
 	}
+
 
 	/**
 	 * Confirm user.
@@ -109,9 +95,9 @@ public class UserService {
 				content.addRequestAttribute(ErrorMessage.LOGIN_FAILURE.toString(), loginFailureDescription);
 			}
 		} else if (optional.isPresent()){
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_PASSWORD, ErrorMessage.LOGIN_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_PASSWORD, ErrorMessage.LOGIN_FAILURE, content);
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LOGIN, ErrorMessage.LOGIN_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_LOGIN, ErrorMessage.LOGIN_FAILURE, content);
 		}
 		return confirmed;
 	}
@@ -151,6 +137,21 @@ public class UserService {
 	}
 
 	/**
+	 * Logout user.
+	 *
+	 * @param content the content
+	 * @return true, if successful
+	 */
+	public boolean logoutUser(SessionRequestContent content){
+		Map <String, Object> sessionAttrs = content.getSessionAttributes();
+		sessionAttrs.put(AttributeName.USER_ID.toString(), null);
+		sessionAttrs.put(AttributeName.USER_LOGIN.toString(), null);
+		sessionAttrs.put(AttributeName.ROLE.toString(), null);
+		content.setUsingCurrentPage(true);
+		return true;
+	}
+
+	/**
 	 * Change locale.
 	 *
 	 * @param content the content
@@ -172,27 +173,39 @@ public class UserService {
 	 * @return true, if successful
 	 */
 	public boolean changeUserPassword(SessionRequestContent content){
-		boolean changed = false;
 		long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		String oldPassword = content.getParameter(ParameterName.PASSWORD.toString());
 		String newPassword = content.getParameter(ParameterName.NEW_PASSWORD.toString());
-		UsersDao dao = DaoFactory.getUsersDao();
-		Optional<User> optional = Optional.empty();
+		boolean changed = false;
 		try {
-			optional = dao.findUserById(userId);
-			if (optional.isPresent()){
-				changed = changePassword(optional.get(), oldPassword, newPassword);
-			}
-			content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+			changed = tryChangeUserPassword(userId, oldPassword, newPassword, content);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_PASSWORD, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_PASSWORD, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
-		if(changed){
-			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), PASSWORD_CHANGED);
+		return changed;
+	}
+
+	private boolean tryChangeUserPassword(long userId, String oldPassword, String newPassword,
+			SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<User> optional = dao.findUserById(userId);
+		boolean changed = false;
+		if (optional.isPresent()){
+			changed = changePassword(optional.get(), oldPassword, newPassword);
+			if(changed){
+				addLocalizedMessageToContent(PASSWORD_CHANGED, AttributeName.USER_PROFILE_CHANGE.toString(), content);
+				content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+			}
 		}
 		return changed;
+	}
+
+	private void addLocalizedMessageToContent(String messageKey, String attributeName, SessionRequestContent content) {
+		String locale = (String) content.getSessionAttribute(AttributeName.LOCALE.toString());
+		String message = LocalizedMessagesContainer.getLocalizedMessageByKey(messageKey, locale);
+		content.addRequestAttribute(attributeName, message);
 	}
 
 	/**
@@ -242,23 +255,27 @@ public class UserService {
 	 * @return true, if successful
 	 */
 	public boolean sendUserPasswordToEmail(SessionRequestContent content){
+		String login = content.getParameter(ParameterName.USER_LOGIN.toString());
 		boolean send = false;
-		Map<String, String[]> parameters = content.getRequestParameters();
-		String login = parameters.get(ParameterName.USER_LOGIN.toString())[0];
-		UsersDao dao = DaoFactory.getUsersDao();
-		Optional<User> optional = Optional.empty();
 		try {
-			optional = dao.findUserByLogin(login);
+			send = trySendUserPasswordToEmail(login);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
 		}
+		return send;
+	}
+
+
+	private boolean trySendUserPasswordToEmail(String login) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<User> optional = dao.findUserByLogin(login);
+		boolean send = false;
 		if (optional.isPresent()){
 			send = sendPasswordToEmail(optional.get());
 			send = true;
 		}
 		return send;
 	}
-
 
 	/**
 	 * Send password to email.
@@ -287,25 +304,32 @@ public class UserService {
 		long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		String password = content.getParameter(ParameterName.PASSWORD.toString());
 		String newLogin = content.getParameter(ParameterName.NEW_LOGIN.toString());
-		UsersDao dao = DaoFactory.getUsersDao();
-		Optional<User> optional = Optional.empty();
 		boolean changed = false;
 		try {
-			optional = dao.findUserById(userId);
-			if(optional.isPresent()){
-				changed = changeLogin(optional.get(), password, newLogin, content);
-			}
-			content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+			changed = tryChangeLogin(userId, password, newLogin, content);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_LOGIN, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_LOGIN, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeLogin(long userId, String password, String newLogin, SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<User> optional = dao.findUserById(userId);
+		boolean changed = false;
+		if(optional.isPresent()){
+			changed = changeLogin(optional.get(), password, newLogin, content);
+		}
 		if (changed){
 			content.addSessionAttribute(AttributeName.USER_LOGIN.toString(), newLogin);
-			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), LOGIN_CHANGED);
+			addLocalizedMessageToContent(LOGIN_CHANGED, AttributeName.USER_PROFILE_CHANGE.toString(), content);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_LOGIN, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
-		return changed;
+		return false;
 	}
 
 	/**
@@ -327,12 +351,14 @@ public class UserService {
 		if (passwordConfirmed && loginIsFree(newLogin)){
 			reencryptUserInfo(user, newLogin);
 			changed = saveUserInfo(user);
+			if (changed){
+				content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+			}
 		} else if (passwordConfirmed){
-			String loginFailureDescription = ErrorMessagesContainer.findMessage(OCCUPIED_LOGIN);
-			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), loginFailureDescription);
+			addLocalizedMessageToContent(ErrorMessage.OCCUPIED_LOGIN.toString(), ErrorMessage.USER_INFO_CHANGE_FAILURE.toString(),
+					content);
 		} else {
-			String errorMessage = ErrorMessagesContainer.findMessage(INVALID_PASSWORD);
-			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), errorMessage);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_PASSWORD, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		return changed;
 	}
@@ -380,21 +406,29 @@ public class UserService {
 		long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		String password = content.getParameter(ParameterName.PASSWORD.toString());
 		String newEmail = content.getParameter(ParameterName.NEW_EMAIL.toString());
-		UsersDao dao = DaoFactory.getUsersDao();
 		boolean changed = false;
 		try {
-			Optional<User> optional = dao.findUserById(userId);
-			if (optional.isPresent()){
-				changed = changeEmail(optional.get(), password, newEmail, content);
-			}
-			content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+			changed = tryChangeEmail(userId, password, newEmail, content);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		content.setUsingCurrentPage(true);
+		return changed;
+	}
+
+	private boolean tryChangeEmail(long userId, String password, String newEmail, SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<User> optional = dao.findUserById(userId);
+		boolean changed = false;
+		if (optional.isPresent()){
+			changed = changeEmail(optional.get(), password, newEmail, content);
+		}
 		if (changed){
 			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), EMAIL_CHANGED);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_INFO_CHANGE_FAILURE.toString());
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		return changed;
 	}
@@ -417,8 +451,7 @@ public class UserService {
 			user.setEmail(encryptedEmail);
 			changed = saveUserInfo(user);
 		} else {
-			String errorMessage = ErrorMessagesContainer.findMessage(INVALID_PASSWORD);
-			content.addRequestAttribute(AttributeName.USER_PROFILE_CHANGE.toString(), errorMessage);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_PASSWORD, ErrorMessage.USER_INFO_CHANGE_FAILURE, content);
 		}
 		return changed;
 	}
@@ -456,13 +489,18 @@ public class UserService {
 			content.setUsingCurrentPage(true);
 		}
 		if (registered) {
-			MessageUtil.addMessageToContent(AttributeName.REGISTRATION_SUCCESS.toString(), content);
-			EmailUtil emailService = EmailUtil.getInstance();
-			String login = content.getParameter(ParameterName.USER_LOGIN.toString());
-			String email = content.getParameter(ParameterName.USER_EMAIL.toString());
-			emailService.sendRegistrationSuccessMessage(email, login);
+			addUserDataToContent(content);
 		}
 		return registered;
+	}
+
+	private void addUserDataToContent(SessionRequestContent content) {
+		MessageUtil.addMessageToContent(AttributeName.REGISTRATION_SUCCESS.toString(), content);
+		EmailUtil emailService = EmailUtil.getInstance();
+		String login = content.getParameter(ParameterName.USER_LOGIN.toString());
+		String email = content.getParameter(ParameterName.USER_EMAIL.toString());
+		emailService.sendRegistrationSuccessMessage(email, login);
+
 	}
 
 	private boolean tryToRegisterNewUser(SessionRequestContent content) throws DaoException{
@@ -473,7 +511,7 @@ public class UserService {
 		boolean registered = false;
 		Optional<User> userWithSameLogin = dao.findUserByLogin(login);
 		if (userWithSameLogin.isPresent()){
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.OCCUPIED_LOGIN, ErrorMessage.REGISTRATION_FAILURE, content);
+			addLocalizedMessageToContent(ErrorMessage.OCCUPIED_LOGIN.toString(), ErrorMessage.REGISTRATION_FAILURE.toString(), content);
 			content.setUsingCurrentPage(true);
 		} else {
 			registered = registerNewUser(login, password, email);
@@ -519,21 +557,9 @@ public class UserService {
 	public boolean findUserProfile(SessionRequestContent content){
 		long userId = (Long) content.getSessionAttribute(AttributeName.USER_ID.toString());
 		String login = (String) content.getSessionAttribute(AttributeName.USER_LOGIN.toString());
-		Optional<UserProfile> optional = Optional.empty();
-		UsersDao dao = DaoFactory.getUsersDao();
 		boolean found = false;
 		try {
-			optional = dao.findUserProfileByUserId(userId);
-			if (optional.isPresent()){
-				UserProfile profile = optional.get();
-				decryptEmail(userId, login, profile);
-				content.addRequestAttribute(AttributeName.USER_PROFILE.toString(), profile);
-				content.removeCurrentPageAttribute(ErrorMessage.USER_PROFILE_ERROR.toString());
-				found = true;
-			} else {
-				ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_PROFILE_ERROR, content);
-				content.setUsingCurrentPage(true);
-			}
+			found = tryFindUserProfile(userId, login, content);
 		} catch (DaoException e) {
 			logger.error("Can't reach users data", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_PROFILE_ERROR, content);
@@ -544,6 +570,23 @@ public class UserService {
 
 
 
+	private boolean tryFindUserProfile(long userId, String login, SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Optional<UserProfile> optional = dao.findUserProfileByUserId(userId);
+		boolean found = false;
+		if (optional.isPresent()){
+			UserProfile profile = optional.get();
+			decryptEmail(userId, login, profile);
+			content.addRequestAttribute(AttributeName.USER_PROFILE.toString(), profile);
+			content.removeCurrentPageAttribute(ErrorMessage.USER_PROFILE_ERROR.toString());
+			found = true;
+		} else {
+			ErrorUtil.addErrorMessageTotContent(ErrorMessage.USER_PROFILE_ERROR, content);
+			content.setUsingCurrentPage(true);
+		}
+		return found;
+	}
+
 	private void decryptEmail(long userId, String login, UserProfile profile) {
 		Cryptor cryptor = Cryptor.getInstance();
 		String key = cryptor.findKey(userId, login);
@@ -552,6 +595,12 @@ public class UserService {
 
 	}
 
+	/**
+	 * Save user ban date.
+	 *
+	 * @param content the content with user id and ban date
+	 * @return true, if successful
+	 */
 	public boolean saveUserBanExpirationDate(SessionRequestContent content) {
 		long userId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
 		long banExpirationDate = Long.parseLong(content.getParameter(ParameterName.DATE.toString()));
@@ -567,22 +616,31 @@ public class UserService {
 		return saved;
 	}
 
+	/**
+	 * Find information for admin usage.
+	 *
+	 * @param content the content
+	 * @return true, if successful
+	 */
 	public boolean findAdminInfo(SessionRequestContent content){
-		Collection<User> users = new LinkedList<>();
-		UsersDao dao = DaoFactory.getUsersDao();
 		boolean found = false;
 		try {
-			users = dao.findAllUsers();
-			found = true;
-			content.addRequestAttribute(AttributeName.USERS.toString(), users);
-			long date = System.currentTimeMillis();
-			content.addRequestAttribute(AttributeName.DATE.toString(), date);
-			content.removeCurrentPageAttribute(ErrorMessage.ADMIN_PROFILE_ERROR.toString());
+			found = tryFindAdminInfo(content);
 		} catch (DaoException e) {
 			logger.error("Data access error", e);
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.ADMIN_PROFILE_ERROR, content);
 		}
 		return found;
+	}
+
+	private boolean tryFindAdminInfo(SessionRequestContent content) throws DaoException {
+		UsersDao dao = DaoFactory.getUsersDao();
+		Collection<User> users = dao.findAllUsers();
+		content.addRequestAttribute(AttributeName.USERS.toString(), users);
+		long date = System.currentTimeMillis();
+		content.addRequestAttribute(AttributeName.DATE.toString(), date);
+		content.removeCurrentPageAttribute(ErrorMessage.ADMIN_PROFILE_ERROR.toString());
+		return true;
 	}
 
 }

@@ -6,13 +6,13 @@ import com.semernik.rockfest.type.ErrorMessage;
 public class ErrorUtil {
 
 
-	public static void addErrorMessageTotContent(ErrorMessage message, ErrorMessage name, SessionRequestContent content) {
+	public static void addErrorMessageToContent(ErrorMessage message, ErrorMessage name, SessionRequestContent content) {
 		String errorMessage = message.findMessage();
 		content.getCurrentPageAttributes().put(name.toString(), errorMessage);
 	}
 
 	public static void addErrorMessageTotContent(ErrorMessage message, SessionRequestContent content) {
-		addErrorMessageTotContent(message, message, content);
+		addErrorMessageToContent(message, message, content);
 	}
 
 }

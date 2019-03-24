@@ -1,4 +1,4 @@
-package com.semernik.rockfest.controller;
+package com.semernik.rockfest.filter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,9 +58,9 @@ public class XssDefenseRequestWrapper extends HttpServletRequestWrapper {
 	}
 
 	private String checkAgainstXss(String parameter) {
+		parameter = parameter.replaceAll(AMPERSAND, PLUS);
 		parameter = parameter.replaceAll(OPEN_BRACKET, LESS_THEN);
 		parameter = parameter.replaceAll(CLOSE_BRACKET, GREATER_THEN);
-		parameter = parameter.replaceAll(AMPERSAND, PLUS);
 		return parameter;
 	}
 

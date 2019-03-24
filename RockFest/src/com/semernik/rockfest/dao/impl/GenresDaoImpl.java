@@ -86,6 +86,12 @@ public class GenresDaoImpl implements GenresDao {
 			}
 			if (result == true){
 				con.commit();
+			} else {
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					logger.error("Database access failure while connection rollback", e1);
+				}
 			}
 		} catch (SQLException e) {
 			result = false;
@@ -111,6 +117,40 @@ public class GenresDaoImpl implements GenresDao {
 		try {
 			con = ConnectionPool.getInstance().takeConnection();
 			st = con.prepareStatement(Query.FIND_ALL_GENRES.toString());
+			result = st.executeQuery();
+			while (result.next()){
+				GenreBuilder builder = new GenreBuilder();
+				Genre genre = builder.genreId( result.getLong(1))
+						.title(result.getString(2))
+						.melodyRating(result.getInt(3))
+						.textRating(result.getInt(4))
+						.musicRating(result.getInt(5))
+						.vocalRating(result.getInt(6))
+						.votedUsersCount(result.getInt(7))
+						.build();
+				genres.add(genre);
+			}
+		} catch (SQLException e) {
+			throw new DaoException("Failed to find genres", e);
+		} finally {
+			closeResultSet(result);
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return genres;
+	}
+
+	@Override
+	public Collection<Genre> findGenres(int position, int elementsCount) throws DaoException {
+		Connection con = null;
+		Collection<Genre> genres = new LinkedList<>();
+		PreparedStatement st = null;
+		ResultSet result = null;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.FIND_GENRES.toString());
+			st.setInt(1, position);
+			st.setInt(2, elementsCount);
 			result = st.executeQuery();
 			while (result.next()){
 				GenreBuilder builder = new GenreBuilder();
@@ -197,6 +237,12 @@ public class GenresDaoImpl implements GenresDao {
 			}
 			if (updated == true){
 				con.commit();
+			} else {
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					logger.error("Database access failure while connection rollback", e1);
+				}
 			}
 		} catch (SQLException e) {
 			updated = false;
@@ -228,7 +274,6 @@ public class GenresDaoImpl implements GenresDao {
 				changed = true;
 			}
 		} catch (SQLException e) {
-			changed = false;
 			throw new DaoException("Fail to change genre title", e);
 		} finally {
 			closeStatement(st);
@@ -242,6 +287,8 @@ public class GenresDaoImpl implements GenresDao {
 		FIND_COMPOSITION_GENRES ("SELECT genreId, title FROM Genres JOIN compositions_has_genres "
 				+ "USING (genreId) WHERE compositionId=?;"),
 		FIND_ALL_GENRES ("SELECT genreId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Genres;"),
+		FIND_GENRES ("SELECT genreId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Genres"
+				+ " LIMIT ?, ?;"),
 		FIND_GENRE_BY_ID("SELECT title, description, addingDate, authorId, editorId, "
 				+ "(SELECT login FROM Users WHERE userId=authorId) AS author, "
 				+ "(SELECT login FROM Users WHERE userId=editorId) AS editor, melodyRating, "

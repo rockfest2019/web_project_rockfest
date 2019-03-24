@@ -16,7 +16,7 @@
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/ratings.css">
 	<link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath }/css/entity.css">
 </head>
-<body>
+<body class="common_background">
 	<header><fmt:message key="composition"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
@@ -44,8 +44,8 @@
 						<form id="titleChangeForm" class="titleChangeForm" action="${pageContext.request.contextPath }/RockFest" method="post">
 							<input type="text" name="command" value="change_composition_title" hidden>
 							<input type="text" name="id" value="${composition.compositionId }" hidden>
-							<input type="text" name="title">New title
-							<input type="submit" value="change title">
+							<input type="text" name="title"><fmt:message key="new_title"/>
+							<input type="submit" value=<fmt:message key="change"/>>
 						</form>
 					</c:if>
 					<section class="error_message"><c:out value="${update_title_error }"></c:out></section>
@@ -77,8 +77,8 @@
 				<section><b><fmt:message key="year"/></b>
 					<h2><c:out value="${fn:substring(composition.year, 0, 4)}"></c:out></h2>
 					<c:if test="${not empty user_id }">
-						<button id="showYearChange" class="showYearChange" onclick="showElement('yearChangeForm', 'hideYearChange', 'showYearChange');">Year change</button>
-						<button id="hideYearChange" class="hideYearChange" onclick="hideElement('yearChangeForm', 'showYearChange', 'hideYearChange');">Year change</button>
+						<button id="showYearChange" class="showYearChange" onclick="showElement('yearChangeForm', 'hideYearChange', 'showYearChange');"><fmt:message key="year_change"/></button>
+						<button id="hideYearChange" class="hideYearChange" onclick="hideElement('yearChangeForm', 'showYearChange', 'hideYearChange');"><fmt:message key="year_change"/></button>
 						<form id="yearChangeForm" class="yearChangeForm" action="${pageContext.request.contextPath }/RockFest" method="post">
 							<input type="text" name="command" value="update_composition_year" hidden>
 							<input type="text" name="id" value="${composition.compositionId }" hidden>
@@ -91,7 +91,7 @@
 									</script>
 								</select>
 							</p>
-							<input type="submit" value="change year">
+							<input type="submit" value=<fmt:message key="change"/>>
 						</form>
 					</c:if>
 				</section>
@@ -101,12 +101,12 @@
 					<c:forEach var="link" items="${links }" varStatus="Status">
 						<section>
 							<p>
-								<a href="${link.url }">Link</a>
+								<a href="${link.url }"><fmt:message key="link"/></a>
 								<c:if test="${role eq 'admin' }">
 									<form id="linkDeletionForm" class="linkDeletionForm" action="${pageContext.request.contextPath }/RockFest" method="post">
 										<input type="text" name="command" value="delete_composition_link" hidden>
 										<input type="text" name="id" value="${link.linkId }" hidden>
-										<input type="submit" value="delete link">
+										<input type="submit" value=<fmt:message key="delete_link"/>>
 									</form>
 								</c:if>
 							</p>
@@ -120,7 +120,7 @@
 								<input name="id" value ="${composition.compositionId}" hidden></input>
 								<input name="command" value="save_composition_link" hidden>
 								<input type="url" name="url" required>
-								<input type="submit" value="Save">
+								<input type="submit" value=<fmt:message key="save"/>>
 							</form>
 						</c:if>
 					</section>
@@ -135,35 +135,35 @@
 						<form action = "${pageContext.request.contextPath }/RockFest">
 							<input type="text" name="ratingType" value="general" hidden>
 							<input type="text" name="command" value="find_compositions_ratings" hidden>
-							<input type="submit" value = <fmt:message key="rating"/>><c:out value="${(composition.melodyRating+composition.textRating+composition.musicRating+composition.vocalRating)/
-									(composition.votedUsersCount*4)}"></c:out>
+							<input type="submit" value = <fmt:message key="rating"/>><fmt:formatNumber type = "number" maxFractionDigits = "2" value="${(composition.melodyRating+composition.textRating+composition.musicRating+composition.vocalRating)/
+									(composition.votedUsersCount*4)}"/>
 						</form>
 						<section class = "rating">
 							<form action = "${pageContext.request.contextPath }/RockFest">
 								<input type="text" name="ratingType" value="melody" hidden>
 								<input type="text" name="command" value="find_compositions_ratings" hidden>
-								<input type="submit" value = <fmt:message key="melody_rating"/>><h3><c:out value="${composition.melodyRating / composition.votedUsersCount}"></c:out></h3>
+								<input type="submit" value = <fmt:message key="melody_rating"/>><h3><fmt:formatNumber type = "number" maxFractionDigits = "2" value="${composition.melodyRating / composition.votedUsersCount}"/></h3>
 							</form>
 						</section>
 						<section class = "rating">
 							<form action = "${pageContext.request.contextPath }/RockFest">
 								<input type="text" name="ratingType" value="text" hidden>
 								<input type="text" name="command" value="find_compositions_ratings" hidden>
-								<input type="submit" value = <fmt:message key="text_rating"/>><h3><c:out value="${composition.textRating / composition.votedUsersCount}"></c:out></h3>
+								<input type="submit" value = <fmt:message key="text_rating"/>><h3><fmt:formatNumber type = "number" maxFractionDigits = "2" value="${composition.textRating / composition.votedUsersCount}"/></h3>
 							</form>
 						</section>
 						<section class = "rating">
 							<form action = "${pageContext.request.contextPath }/RockFest">
 								<input type="text" name="ratingType" value="music" hidden>
 								<input type="text" name="command" value="find_compositions_ratings" hidden>
-								<input type="submit" value = <fmt:message key="music_rating"/>><h3><c:out value="${composition.musicRating / composition.votedUsersCount}"></c:out></h3>
+								<input type="submit" value = <fmt:message key="music_rating"/>><h3><fmt:formatNumber type = "number" maxFractionDigits = "2" value="${composition.musicRating / composition.votedUsersCount}"/></h3>
 							</form>
 						</section>
 						<section class = "rating">
 							<form action = "${pageContext.request.contextPath }/RockFest">
 								<input type="text" name="ratingType" value="vocal" hidden>
 								<input type="text" name="command" value="find_compositions_ratings" hidden>
-								<input type="submit" value = <fmt:message key="vocal_rating"/>><h3><c:out value="${composition.vocalRating / composition.votedUsersCount}"></c:out></h3>
+								<input type="submit" value = <fmt:message key="vocal_rating"/>><h3><fmt:formatNumber type = "number" maxFractionDigits = "2" value="${composition.vocalRating / composition.votedUsersCount}"/></h3>
 							</form>
 						</section>
 						<section><h2><b><fmt:message key="voted_users_count"/></b><c:out value=" ${composition.votedUsersCount }"></c:out></h2></section>
@@ -212,7 +212,7 @@
 							</c:if>
 						</section>
 						<c:if test="${empty user_rating }">
-						<form action = "${pageContext.request.contextPath }/RockFest" method="post">
+						<section class="new_rating">"<form action = "${pageContext.request.contextPath }/RockFest" method="post">
 							<section><fmt:message key="rating_insertion_hint"/></section>
 							<input name="command" value="save_user_rating" hidden>
 							<input name="id" value ="${composition.compositionId}" hidden>
@@ -221,15 +221,18 @@
 							<input type="range" name="musicRating" min="1" max="10"><fmt:message key="music_rating"/><br>
 							<input type="range" name="vocalRating" min="1" max="10"><fmt:message key="vocal_rating"/><br>
 							<input type="submit" value = "submit">
-						</form>
+						</form></section>
 						</c:if>
 						</c:if>
 					</section>
 				</section>
 				<b><fmt:message key="adding_date"/></b><h4><c:out value="${composition.addingDate }"></c:out></h4>
-				<section>
+				<b><fmt:message key="author"/></b><h4><c:out value="${composition.author }"></c:out></h4>
+				<b><fmt:message key="genre_editor"/></b><h4><c:out value="${composition.genreEditor }"></c:out></h4>
+				<b><fmt:message key="year_editor"/></b><h4><c:out value="${composition.yearEditor }"></c:out></h4>
+				<section class="comments">
 					<c:forEach var="comment" items="${comments }" varStatus="Status">
-						<section>
+						<section class="comment">
 							<c:out value="${comment.authorLogin }"></c:out>
 							<c:out value="${comment.date }"></c:out><br>
 							<c:out value="${comment.content }"></c:out>
@@ -237,7 +240,7 @@
 								<form id="commentDeletionForm" class="commentDeletionForm" action="${pageContext.request.contextPath }/RockFest" method="post">
 									<input type="text" name="command" value="delete_composition_comment" hidden>
 									<input type="text" name="id" value="${comment.commentId }" hidden>
-									<input type="submit" value="delete comment">
+									<input type="submit" value=<fmt:message key="delete_comment"/>>
 								</form>
 							</c:if>
 						</section>
@@ -245,12 +248,12 @@
 				</section>
 				<section class="error_message"><c:out value="${comments_failure }"></c:out></section>
 				<c:if test="${not empty user_id }">
-					Your comment:<br>
+					<fmt:message key="your_comment"/>:<br>
 					<form action="${pageContext.request.contextPath }/RockFest" method="post">
 					<input type="text" name="command" value="save_comment" hidden>
 					<input type="text" name="id" value="${composition.compositionId }" hidden>
 						<textarea required name="commentContent" cols="60" rows="3" maxlength="200"></textarea>
-						<input type="submit" value="Save comment">
+						<input type="submit" value=<fmt:message key="save_comment"/>>
 					</form>
 				</c:if>
 	</main>

@@ -12,7 +12,7 @@
 </head>
 <body>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
-	<main>
+	<main class="common_background">
 		<h1><fmt:message key="page_not_found"/></h1>
 	</main>
 

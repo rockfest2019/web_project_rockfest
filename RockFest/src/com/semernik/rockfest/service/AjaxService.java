@@ -1,7 +1,6 @@
 package com.semernik.rockfest.service;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -13,6 +12,7 @@ import com.semernik.rockfest.dao.DaoFactory;
 import com.semernik.rockfest.dao.GenresDao;
 import com.semernik.rockfest.entity.EntityRating;
 import com.semernik.rockfest.entity.Genre;
+import com.semernik.rockfest.type.AttributeName;
 import com.semernik.rockfest.type.EntityType;
 import com.semernik.rockfest.type.ErrorMessage;
 import com.semernik.rockfest.type.ParameterName;
@@ -29,7 +29,7 @@ public class AjaxService {
 
 	private static Logger logger = LogManager.getLogger();
 	private static AjaxService instance = new AjaxService();
-	private final static int MAX_ELEMENTS_COUNT = 5;
+	private final static int MAX_ELEMENTS_COUNT = 50;
 
 
 	private AjaxService(){}
@@ -98,15 +98,9 @@ public class AjaxService {
 		int position = Integer.parseInt(content.getParameter(ParameterName.POSITION.toString()));
 		int elementsCount = Integer.parseInt(content.getParameter(ParameterName.ELEMENTS_COUNT.toString()));
 		elementsCount = (elementsCount > MAX_ELEMENTS_COUNT) ? MAX_ELEMENTS_COUNT : elementsCount;
-		List<EntityRating> ratings = new LinkedList<>();
 		boolean found = false;
 		try {
-			ratings = daoMethod.apply(position, elementsCount);
-			found = true;
-			ratings.forEach(RatingUtil.getInstance()::transformToAverageRatings);
-			AjaxUtil utilAjax = AjaxUtil.getInstance();
-			String ajaxResponse = utilAjax.generateHTMLRatings(comparingEntity, comparatorName, ratings, position, elementsCount);
-			content.setAjaxResponse(ajaxResponse);
+			found = tryFindRatings(content, daoMethod, position, elementsCount, comparingEntity, comparatorName);
 		} catch (DaoException e) {
 			logger.error("Ratings are not reachable ", e);
 			String ratingFailure = ErrorMessage.RATING_FAILURE.findMessage();
@@ -115,23 +109,38 @@ public class AjaxService {
 		return found;
 	}
 
+	private boolean tryFindRatings(SessionRequestContent content, RatingsDaoMethod daoMethod, int position,
+			int elementsCount, String comparingEntity, String comparatorName)  throws DaoException{
+		List<EntityRating> ratings = daoMethod.apply(position, elementsCount);
+		ratings.forEach(RatingUtil.getInstance()::transformToAverageRatings);
+		AjaxUtil utilAjax = AjaxUtil.getInstance();
+		String locale = (String)content.getSessionAttribute(AttributeName.LOCALE.toString());
+		String ajaxResponse = utilAjax.generateHTMLRatings(comparingEntity, comparatorName, ratings, position, elementsCount, locale);
+		content.setAjaxResponse(ajaxResponse);
+		return true;
+	}
+
 	public boolean findGenresForComposition(SessionRequestContent content){
 		long compositionId = Long.parseLong(content.getParameter(ParameterName.ID.toString()));
-		GenresDao dao = DaoFactory.getGenresDao();
-		Collection<Genre> genres = new LinkedList<>();
 		boolean found = false;
 		try {
-			genres = dao.findAllGenres();
-			found = true;
-			AjaxUtil utilAjax = AjaxUtil.getInstance();
-			String ajaxResponse = utilAjax.generateHTMLGenresForComposition(compositionId, genres);
-			content.setAjaxResponse(ajaxResponse);
+			found = tryFindGenresForComposition(content, compositionId);
 		} catch (DaoException e) {
 			logger.error("Data access error ", e);
 			String genresFailure = ErrorMessage.GENRE_ERROR.findMessage();
 			content.setAjaxResponse(genresFailure);
 		}
 		return found;
+	}
+
+	private boolean tryFindGenresForComposition(SessionRequestContent content, long compositionId) throws DaoException{
+		GenresDao dao = DaoFactory.getGenresDao();
+		Collection<Genre> genres = dao.findAllGenres();
+		AjaxUtil utilAjax = AjaxUtil.getInstance();
+		String locale = (String)content.getSessionAttribute(AttributeName.LOCALE.toString());
+		String ajaxResponse = utilAjax.generateHTMLGenresForComposition(compositionId, genres, locale);
+		content.setAjaxResponse(ajaxResponse);
+		return true;
 	}
 
 

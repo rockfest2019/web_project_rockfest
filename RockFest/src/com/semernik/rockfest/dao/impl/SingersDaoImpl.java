@@ -58,6 +58,12 @@ public class SingersDaoImpl implements SingersDao {
 			}
 			if (result == true){
 				con.commit();
+			} else {
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					logger.error("Database access failure while connection rollback", e1);
+				}
 			}
 		} catch (SQLException e) {
 			result = false;
@@ -83,6 +89,40 @@ public class SingersDaoImpl implements SingersDao {
 		try {
 			con = ConnectionPool.getInstance().takeConnection();
 			st = con.prepareStatement(Query.FIND_ALL_SINGERS.toString());
+			result = st.executeQuery();
+			while (result.next()){
+				SingerBuilder builder = new SingerBuilder();
+				Singer singer = builder.singerId( result.getLong(1))
+						.title(result.getString(2))
+						.melodyRating(result.getInt(3))
+						.textRating(result.getInt(4))
+						.musicRating(result.getInt(5))
+						.vocalRating(result.getInt(6))
+						.votedUsersCount(result.getInt(7))
+						.build();
+				singers.add(singer);
+			}
+		} catch (SQLException e) {
+			throw new DaoException("Failed to find singers", e);
+		} finally {
+			closeResultSet(result);
+			closeStatement(st);
+			closeConnection(con);
+		}
+		return singers;
+	}
+
+	@Override
+	public Collection<Singer> findSingers(int position, int elementsCount) throws DaoException {
+		Connection con = null;
+		Collection<Singer> singers = new LinkedList<>();
+		PreparedStatement st = null;
+		ResultSet result = null;
+		try {
+			con = ConnectionPool.getInstance().takeConnection();
+			st = con.prepareStatement(Query.FIND_SINGERS.toString());
+			st.setInt(1, position);
+			st.setInt(2, elementsCount);
 			result = st.executeQuery();
 			while (result.next()){
 				SingerBuilder builder = new SingerBuilder();
@@ -169,6 +209,12 @@ public class SingersDaoImpl implements SingersDao {
 			}
 			if (updated == true){
 				con.commit();
+			} else {
+				try {
+					con.rollback();
+				} catch (SQLException e1) {
+					logger.error("Database access failure while connection rollback", e1);
+				}
 			}
 		} catch (SQLException e) {
 			updated = false;
@@ -212,6 +258,8 @@ public class SingersDaoImpl implements SingersDao {
 	private enum Query {
 
 		FIND_ALL_SINGERS ("SELECT singerId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Singers;"),
+		FIND_SINGERS ("SELECT singerId, title, melodyRating, textRating, musicRating, vocalRating, votedUsersCount FROM Singers"
+				+ " LIMIT ?, ?;"),
 		FIND_SINGER_BY_ID("SELECT title, description, addingDate, authorId, editorId, "
 				+ "(SELECT login FROM Users WHERE userId=authorId) AS author, "
 				+ "(SELECT login FROM Users WHERE userId=editorId) AS editor, melodyRating, "

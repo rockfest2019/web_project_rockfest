@@ -54,9 +54,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if(validGenreOrSinger(content)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_PARAMETERS.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_SINGER, ErrorMessage.INVALID_PARAMETERS, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_SINGER, ErrorMessage.INVALID_PARAMETERS, content);
 		}
 		return valid;
 	}
@@ -71,9 +71,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if(validGenreOrSinger(content)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_PARAMETERS.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_GENRE, ErrorMessage.INVALID_PARAMETERS, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_GENRE, ErrorMessage.INVALID_PARAMETERS, content);
 		}
 		return valid;
 	}
@@ -89,9 +89,8 @@ public class GeneralValidator {
 		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getGenreSet())){
 			return false;
 		}
-		Map <String, String[]> requestParameters = content.getRequestParameters();
-		String description = requestParameters.get(ParameterName.DESCRIPTION.toString())[0];
-		String title = requestParameters.get(ParameterName.TITLE.toString())[0];
+		String description = content.getParameter(ParameterName.DESCRIPTION.toString());
+		String title = content.getParameter(ParameterName.TITLE.toString());
 		boolean valid = false;
 		if ( description.length() <= DESCRIPTION_LENGTH && title.length() <= TITLE_LENGTH){
 			valid = true;
@@ -137,16 +136,15 @@ public class GeneralValidator {
 				|| !genresIdsAreValid(content)){
 			return false;
 		}
-				Map <String, String[]> requestParameters = content.getRequestParameters();
-		String title = requestParameters.get(ParameterName.TITLE.toString())[0];
-		String year = requestParameters.get(ParameterName.YEAR.toString())[0];
-		String singerId = requestParameters.get(ParameterName.SINGER_ID.toString())[0];
+		String title = content.getParameter(ParameterName.TITLE.toString());
+		String year = content.getParameter(ParameterName.YEAR.toString());
+		String singerId = content.getParameter(ParameterName.SINGER_ID.toString());
 		boolean valid = false;
 		if (title.length() <= TITLE_LENGTH && validYearDescription(year) && validId(singerId)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_PARAMETERS.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_PARAMETERS.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMPOSITION, ErrorMessage.INVALID_PARAMETERS, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_COMPOSITION, ErrorMessage.INVALID_PARAMETERS, content);
 		}
 		return valid;
 	}
@@ -158,9 +156,8 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	private boolean genresIdsAreValid(SessionRequestContent content){
-		Map <String, String[]> requestParameters = content.getRequestParameters();
 		boolean valid = true;
-		String [] genresIds = requestParameters.get(ParameterName.GENRES_IDS.toString());
+		String [] genresIds = content.getParameters(ParameterName.GENRES_IDS.toString());
 		if (genresIds != null){
 			int i = 0;
 			int len = genresIds.length;
@@ -189,12 +186,11 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	public boolean validId (SessionRequestContent content){
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String [] idsArray = parameters.get(ParameterName.ID.toString());
+		String id = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
-		if (idsArray != null && validId(idsArray[0])){
+		if (validId(id)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_ID.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_ID.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_ID, content);
 		}
@@ -212,13 +208,12 @@ public class GeneralValidator {
 		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getCommentSet())){
 			return false;
 		}
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String commentContent = parameters.get(ParameterName.COMMENT_CONTENT.toString())[0];
-		String id = parameters.get(ParameterName.ID.toString())[0];
+		String commentContent = content.getParameter(ParameterName.COMMENT_CONTENT.toString());
+		String id = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
 		if (commentContent.length() <= COMMENT_CONTENT_LENGTH && validId(id)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_COMMENT.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.INVALID_COMMENT.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMMENT, content);
 		}
@@ -236,9 +231,8 @@ public class GeneralValidator {
 		if (!userValidator.validUser(content) || requestedParametersNamesMiss(content, RequiredParametersContainer.getCompositionLinkSet())){
 			return false;
 		}
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String compositionId = parameters.get(ParameterName.ID.toString())[0];
-		String linkUrl = parameters.get(ParameterName.URL.toString())[0];
+		String compositionId = content.getParameter(ParameterName.ID.toString());
+		String linkUrl = content.getParameter(ParameterName.URL.toString());
 		boolean valid = false;
 		if (validId(compositionId) && validUrl(linkUrl)){
 			valid = true;
@@ -272,10 +266,9 @@ public class GeneralValidator {
 	 * @return true, if successful
 	 */
 	public boolean validRatingType(SessionRequestContent content){
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String [] ratingTypes = parameters.get(ParameterName.RATING_TYPE.toString());
+		String ratingType = content.getParameter(ParameterName.RATING_TYPE.toString());
 		boolean valid = false;
-		if (ratingTypes != null && validRatingType(ratingTypes[0])){
+		if (validRatingType(ratingType)){
 			valid = true;
 			content.getCurrentPageAttributes().remove(ErrorMessage.RATING_FAILURE.toString());
 		} else {
@@ -306,12 +299,11 @@ public class GeneralValidator {
 		if (!userValidator.validUser(content)){
 			return false;
 		}
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String [] ratingTypes = parameters.get(ParameterName.RATING_TYPE.toString());
+		String ratingType = content.getParameter(ParameterName.RATING_TYPE.toString());
 		boolean valid = false;
-		if (ratingTypes != null && validRatingType(ratingTypes[0])){
+		if (validRatingType(ratingType)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.RATING_FAILURE.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.RATING_FAILURE.toString());
 		} else {
 			ErrorUtil.addErrorMessageTotContent(ErrorMessage.RATING_FAILURE, content);
 		}
@@ -329,12 +321,11 @@ public class GeneralValidator {
 			content.setAjaxResponse(ErrorMessage.RATING_FAILURE.findMessage());
 			return false;
 		}
-		Map <String, String[]> parameters = content.getRequestParameters();
-		String ratingType = parameters.get(ParameterName.RATING_TYPE.toString())[0];
-		String position = parameters.get(ParameterName.POSITION.toString())[0];
-		String elementsCount = parameters.get(ParameterName.ELEMENTS_COUNT.toString())[0];
+		String ratingType = content.getParameter(ParameterName.RATING_TYPE.toString());
+		String position = content.getParameter(ParameterName.POSITION.toString());
+		String elementsCount = content.getParameter(ParameterName.ELEMENTS_COUNT.toString());
 		boolean valid = false;
-		if (validRatingType(ratingType) && validPosition(position) && validElementsCountn(elementsCount)){
+		if (validRatingType(ratingType) && validPosition(position) && validElementsCount(elementsCount)){
 			valid = true;
 		} else {
 			content.setAjaxResponse(ErrorMessage.RATING_FAILURE.findMessage());
@@ -348,7 +339,7 @@ public class GeneralValidator {
 	 * @param elementsCount the elements count
 	 * @return true, if successful
 	 */
-	private boolean validElementsCountn(String elementsCount) {
+	private boolean validElementsCount(String elementsCount) {
 		Matcher matcher = ELEMENTS_COUNT_PATTERN.matcher(elementsCount);
 		return matcher.matches();
 	}
@@ -374,9 +365,9 @@ public class GeneralValidator {
 		if (content == null){
 			return false;
 		}
-		String [] searchPatterns = content.getRequestParameters().get(ParameterName.SEARCH_PATTERN.toString());
+		String searchPattern = content.getParameter(ParameterName.SEARCH_PATTERN.toString());
 		boolean valid = false;
-		if (searchPatterns != null && validSearchPattern(searchPatterns[0])){
+		if (validSearchPattern(searchPattern)){
 			valid = true;
 			content.getCurrentPageAttributes().remove(ErrorMessage.INVALID_SEARCH_PATTERN.toString());
 		} else {
@@ -408,14 +399,14 @@ public class GeneralValidator {
 				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getDescriptionUpdateSet())){
 			return false;
 		}
-		String description = content.getRequestParameters().get(ParameterName.DESCRIPTION.toString())[0];
-		String entityId = content.getRequestParameters().get(ParameterName.ID.toString())[0];
+		String description = content.getParameter(ParameterName.DESCRIPTION.toString());
+		String entityId = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
 		if (description.length() <= DESCRIPTION_LENGTH && validId(entityId)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_DESCRIPTION_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_DESCRIPTION_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_DESCRIPTION, ErrorMessage.UPDATE_DESCRIPTION_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_DESCRIPTION, ErrorMessage.UPDATE_DESCRIPTION_ERROR, content);
 		}
 		return valid;
 	}
@@ -431,13 +422,13 @@ public class GeneralValidator {
 		if (!userValidator.validUser(content)){
 			return false;
 		}
-		String [] compositionIds = content.getRequestParameters().get(ParameterName.ID.toString());
+		String compositionId = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
-		if (compositionIds != null && validId(compositionIds[0]) && genresIdsAreValid(content)){
+		if (validId(compositionId) && genresIdsAreValid(content)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.GENRE_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.GENRE_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMPOSITION_GENRES, ErrorMessage.GENRE_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_COMPOSITION_GENRES, ErrorMessage.GENRE_ERROR, content);
 		}
 		return valid;
 	}
@@ -454,14 +445,14 @@ public class GeneralValidator {
 				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getCompositionYearUpdateSet())){
 			return false;
 		}
-		String id = content.getRequestParameters().get(ParameterName.ID.toString())[0];
-		String year = content.getRequestParameters().get(ParameterName.YEAR.toString())[0];
+		String id = content.getParameter(ParameterName.ID.toString());
+		String year = content.getParameter(ParameterName.YEAR.toString());
 		boolean valid = false;
 		if (validId(id) && validYearDescription(year)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_YEAR_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_YEAR_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_YEAR, ErrorMessage.UPDATE_YEAR_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_YEAR, ErrorMessage.UPDATE_YEAR_ERROR, content);
 		}
 		return valid;
 	}
@@ -472,14 +463,14 @@ public class GeneralValidator {
 				|| requestedParametersNamesMiss(content, RequiredParametersContainer.getTitleSet())){
 			return false;
 		}
-		String id = content.getRequestParameters().get(ParameterName.ID.toString())[0];
-		String title = content.getRequestParameters().get(ParameterName.TITLE.toString())[0];
+		String id = content.getParameter(ParameterName.ID.toString());
+		String title = content.getParameter(ParameterName.TITLE.toString());
 		boolean valid = false;
 		if (title.length() <= TITLE_LENGTH && validId(id)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.UPDATE_TITLE_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.UPDATE_TITLE_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_NEW_TITlE, ErrorMessage.UPDATE_TITLE_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_NEW_TITlE, ErrorMessage.UPDATE_TITLE_ERROR, content);
 		}
 		return valid;
 	}
@@ -488,9 +479,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if(validIdAndAdmin(content)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.DELETE_COMMENT_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.DELETE_COMMENT_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_COMMENT_DELETION, ErrorMessage.DELETE_COMMENT_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_COMMENT_DELETION, ErrorMessage.DELETE_COMMENT_ERROR, content);
 		}
 		return valid;
 	}
@@ -499,9 +490,9 @@ public class GeneralValidator {
 		boolean valid = false;
 		if(validIdAndAdmin(content)){
 			valid = true;
-			content.getCurrentPageAttributes().remove(ErrorMessage.DELETE_LINK_ERROR.toString());
+			content.removeCurrentPageAttribute(ErrorMessage.DELETE_LINK_ERROR.toString());
 		} else {
-			ErrorUtil.addErrorMessageTotContent(ErrorMessage.INVALID_LINK_DELETION, ErrorMessage.DELETE_LINK_ERROR, content);
+			ErrorUtil.addErrorMessageToContent(ErrorMessage.INVALID_LINK_DELETION, ErrorMessage.DELETE_LINK_ERROR, content);
 		}
 		return valid;
 	}
@@ -511,9 +502,22 @@ public class GeneralValidator {
 		if (!userValidator.validAdmin(content)){
 			return false;
 		}
-		String [] Ids = content.getRequestParameters().get(ParameterName.ID.toString());
+		String Id = content.getParameter(ParameterName.ID.toString());
 		boolean valid = false;
-		if (Ids != null && validId(Ids[0])){
+		if (validId(Id)){
+			valid = true;
+		}
+		return valid;
+	}
+
+	public boolean validEntitiesSearch(SessionRequestContent content){
+		if (content == null || requestedParametersNamesMiss(content, RequiredParametersContainer.getEntitiesSet())){
+			return false;
+		}
+		String position = content.getParameter(ParameterName.POSITION.toString());
+		String elementsCount = content.getParameter(ParameterName.ELEMENTS_COUNT.toString());
+		boolean valid = false;
+		if(validPosition(elementsCount) && validElementsCount(elementsCount)){
 			valid = true;
 		}
 		return valid;

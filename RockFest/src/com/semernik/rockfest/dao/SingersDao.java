@@ -41,6 +41,15 @@ public interface SingersDao extends Dao {
 	Collection<Singer> findAllSingers() throws DaoException;
 
 	/**
+	 * Find specific part of singers.
+	 * @param position the position in singers from which selection begin
+	 * @param elementsCount the elements count from the position
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
+	Collection<Singer> findSingers(int position, int elementsCount) throws DaoException;
+
+	/**
 	 * Find singer by id.
 	 *
 	 * @param singerId the singer id
@@ -49,5 +58,13 @@ public interface SingersDao extends Dao {
 	 */
 	Optional<Singer> findSingerById(long singerId) throws DaoException;
 
+	/**
+	 * Change singer title.
+	 *
+	 * @param singerId the singer id
+	 * @param newTitle the new singer title
+	 * @return the collection
+	 * @throws DaoException the dao exception
+	 */
 	boolean changeSingerTitle(long singerId, String newTitle) throws DaoException;
 }

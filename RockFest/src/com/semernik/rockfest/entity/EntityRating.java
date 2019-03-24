@@ -75,16 +75,16 @@ public class EntityRating {
 	 * Instantiates a new entity rating.
 	 *
 	 * @param title the title
-	 * @param compositionId the composition id
+	 * @param entityId the entity id
 	 * @param melody the melody
 	 * @param text the text
 	 * @param music the music
 	 * @param vocal the vocal
 	 * @param votedUsersCount the voted users count
 	 */
-	public EntityRating(String title, long compositionId, double melody, double text, double music, double vocal,
+	public EntityRating(String title, long entityId, double melody, double text, double music, double vocal,
 			int votedUsersCount) {
-		this(0, title, compositionId, melody, text, music, vocal, votedUsersCount);
+		this(0, title, entityId, melody, text, music, vocal, votedUsersCount);
 	}
 
 	/**
@@ -246,7 +246,11 @@ public class EntityRating {
 	 * @return the rating
 	 */
 	public double getRating(){
-		return (melodyRating + textRating + musicRating + vocalRating)/4;
+		double rating = (melodyRating + textRating + musicRating + vocalRating)/4;
+		rating *=100;
+		rating = Math.round(rating);
+		rating /= 100;
+		return rating;
 	}
 
 

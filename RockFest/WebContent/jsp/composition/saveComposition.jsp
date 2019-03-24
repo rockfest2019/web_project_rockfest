@@ -10,7 +10,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title><fmt:message key="new_composition"/></title>
 </head>
-<body>
+<body class="common_background">
 	<header><fmt:message key="new_composition"/></header>
 	<jsp:include page="../included pages/navigation menu.jsp"></jsp:include>
 	<main>
